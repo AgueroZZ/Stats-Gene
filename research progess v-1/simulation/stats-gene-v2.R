@@ -1,0 +1,151 @@
+library(tidyverse)
+library(lme4)
+
+###### For a simulation of size n:
+
+n = 50000
+
+set.seed(123)
+
+p1 <- 0.7
+q1 <- 0.3
+
+p2 <- 0.7
+q2 <- 0.3
+
+
+##### Generate random genotype for G1 and G2, and a normal environmental factor that is unknown:
+G1 = apply(X = rmultinom(n,1,prob = c(p1^2,2*p1*q1,q1^2))>0, FUN = "which",MARGIN = 2) - 1
+G2 = apply(X = rmultinom(n,1,prob = c(p2^2,2*p2*q2,q2^2))>0, FUN = "which",MARGIN = 2) - 1
+E <- rnorm(n, mean = 1, sd = 6)
+# E <- rt(n = n, df = 1)
+# E <- rexp(n, rate = 2) 
+
+### Case 1: If the true model is nicely additive without interaction (Assuming probit model, inverse normal CDF as link function)
+beta0 <- -1.5
+beta1 <- 0.8
+beta2 <- 0.7
+beta3 <- 1
+
+latent_y <- beta0 + beta1*G1 + beta2*G2 + rnorm(n = n)
+y <- ifelse(latent_y>0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+
+
+p <- data %>% group_by(G1,G2) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+
+resultG2 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG2) <- c("G1=0","G1=1","G1=2")
+colnames(resultG2) <- c("1-0","2-1")
+knitr::kable(resultG2)
+
+### A weighted sum for G2's difference:
+((table(G1)[1]) * a1 + (table(G1)[2]) * a2 + (table(G1)[3]) * a3)/n
+
+
+#### Similarly for G1:
+
+p <- data %>% group_by(G2,G1) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+### A weighted sum:
+resultG1 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG1) <- c("G2=0","G2=1","G2=2")
+colnames(resultG1) <- c("1-0","2-1")
+knitr::kable(resultG1)
+((table(G2)[1]) * a1 + (table(G2)[2]) * a2 + (table(G2)[3]) * a3)/n
+
+
+
+
+
+
+
+
+
+
+
+############### With Interaction:
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + beta3*G1*E + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+
+
+p <- data %>% group_by(G1,G2) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+
+resultG2 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG2) <- c("G1=0","G1=1","G1=2")
+colnames(resultG2) <- c("1-0","2-1")
+knitr::kable(resultG2)
+
+### A weighted sum for G2's difference:
+((table(G1)[1]) * a1 + (table(G1)[2]) * a2 + (table(G1)[3]) * a3)/n
+
+
+#### Similarly for G1:
+
+p <- data %>% group_by(G2,G1) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+### A weighted sum:
+resultG1 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG1) <- c("G2=0","G2=1","G2=2")
+colnames(resultG1) <- c("1-0","2-1")
+knitr::kable(resultG1)
+((table(G2)[1]) * a1 + (table(G2)[2]) * a2 + (table(G2)[3]) * a3)/n
+
+
+
+
+
+
+###### Method 2: Random Slope:
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model2 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "probit"), data = data)
+summary(model2)
+
+
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + beta3*G1*E + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model1 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "probit"), data = data)
+summary(model1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

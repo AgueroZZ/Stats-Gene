@@ -1,0 +1,344 @@
+---
+title: "Detecting interaction with unknown environmental covariate"
+author: "Ziang Zhang"
+date: "15/10/2020"
+output: 
+  pdf_document:
+    keep_tex: true
+    number_sections: true
+    fig_caption: yes
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lme4)
+```
+
+# Summary of current idea:
+
+## Latent Model for binary data
+
+For binary response variable, it is often assumed that the reponse variable $y_i$ conditioning on the regressors $G_1,G_2$ come from a latent model such that:
+\begin{equation}\label{eqn:latentformulation}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\end{aligned}
+\end{equation}
+
+The unobserved latent variable $Y_i^*$ determines whether the observed response variable $Y_i$ is 0 or 1. The error term $\epsilon_i$ in $Y_i^*$ needs to have a completely known distribution, which can be $\text{N}(0,1)$ for the model to become a probit model, or a logistic distribution with mean 0 and variance 3.28 for the model to become a logistic regression model.
+
+
+
+## Potential Method 1: By checking linearity:
+
+### When the true model does not contain interaction with environmental factor
+
+First, consider that the true underlying model for the response variable $Y_i$ is a probit model without interaction effect, i.e:
+\begin{equation}\label{eqn:probitModel}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\epsilon_i &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Therefore, it can be shown that:
+\begin{equation}\label{eqn:probitModelLinearity}
+\begin{aligned}
+\text{P}(Y_i = 1| G_1, G_2) &= \text{P}(\epsilon_i > -(\beta_0 +\beta_1 G_1 + \beta_2 G_2)) \\
+&= 1 - \Phi(-(\beta_0 + \beta_1 G_1 + \beta_2 G_2)) \\
+&= \Phi(\beta_0 + \beta_1 G_1 + \beta_2 G_2)
+\end{aligned}
+\end{equation}
+Where $\Phi(.)$ denote the CDF function of standard normal distribution. Therefore, $\Phi^{-1}\bigg(\text{P}(Y_i = 1|G_1,G_2)\bigg)$ shoud be a linear function of both $G_1$ and $G_2$.
+
+### When the true model does contain gene-environment interaction
+
+Assume for simplicity that $E_i$ the environmental variable has a normal distribution with mean $\mu_E$ and variance $\sigma_E^2$, and suppose that the true underlying model is:
+\begin{equation}\label{eqn:probitModelWithInteraction}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \beta_3 G_1 \times E + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\epsilon_i &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Furthermore, we can compute that:
+\begin{equation}\label{eqn:probitModelWithInteraction_MeanVar}
+\begin{aligned}
+\text{E}(Y_i^*|G_1,G_2) &= \beta_0 + (\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2 \\
+\text{Var}(Y_i^*|G_1,G_2) &= (\beta_3 G_1)^2 \sigma_E^2 + 1 \\
+Y_i^*|G_1, G_2 &\sim \text{N}\bigg(\beta_0 + (\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2,  \big(\beta_3 G_1\big)^2 \sigma_E^2 + 1\bigg)
+\end{aligned}
+\end{equation}
+
+That implies that the probability we get a case for different levels of $G_1$ and $G_2$ will be:
+\begin{equation}\label{eqn:probitModelWithInteraction_Prob} 
+\begin{aligned} 
+\text{P}(Y = 1 | G_1, G_2) &= \text{P}(Y^* > 0| G_1, G_2) \\ 
+                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}} > \frac{-\text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}}) \\
+                           &= \Phi \bigg( \frac{\text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}} \bigg)
+\end{aligned}
+\end{equation}
+
+Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G_1, G_2) \bigg) = \frac{\beta_0+(\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2}{\sqrt{(\beta_3^2 G_1^2 \sigma_E^2 + 1)}} $$. 
+
+This is not a linear function of $G_1$, but is a linear function of $G_2$.
+
+\begin{enumerate}
+\item If the true underlying model also contains another regressor $Z$ but $Z$ is uncorrelated with $G_2$ for example. Then eventhough ignoring that regressor breaks the structural assumption of probit model, so that the fitted model without $Z$ is no longer a probit model (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y_i = 1|G_1,G_2))$ will still be a linear function of $G_2$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
+\item Since $P(Y_i = 1|G_1,G_2)$ is actually unknown in practice, we can estimate it using the sample proportion $\hat{P}(Y = 1|G_1 = g_1,G_2 = g_2) = \frac{\sum_{i=1}^{n} \text{I}\{y_i =1,G_{1i} = g_1, G_{2i} = g_2\}}{\sum_{i=1}^{n}  \text{I}\{G_{1i} = g_1, G_{2i} = g_2\}}$. We shouldn't use the fitted model to estimate them since our fitted model may be wrong.
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G_1,G_2$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G_1,G_2$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literatures, it seems like probit model and logistic model have really closed results in real applications.
+\item If this method is feasible, I will try to find a test statistic that has a nice asymptotic null distribution for the testing of linearity.
+\end{enumerate}
+
+
+### A simple simulation study:
+
+Let the sample size be 300000. Let $G_1$ and $G_2$ be randomly generated from two multinomial distribution. Assuming their effects are additive with coefficient $1.5$ and $1$ respectively. First consider the case when no interaction is present:
+
+```{r eval=F}
+###### For a simulation of size n:
+n = 30000
+set.seed(123)
+
+p1 <- 0.7
+q1 <- 0.3
+
+p2 <- 0.7
+q2 <- 0.3
+
+
+
+##### Generate random genotype for G1 and G2, and a normal environmental factor that is unknown:
+G1 = apply(X = rmultinom(n,1,prob = c(p1^2,2*p1*q1,q1^2)) > 0, FUN = "which",MARGIN = 2) - 1
+G2 = apply(X = rmultinom(n,1,prob = c(p2^2,2*p2*q2,q2^2)) > 0, FUN = "which",MARGIN = 2) - 1
+E <- rnorm(n, mean = 1, sd = 6)
+
+### Case 1: If the true model is nicely additive without interaction (Assuming probit model, inverse normal CDF as link function)
+beta0 <- -1.5
+beta1 <- 0.8
+beta2 <- 0.7
+beta3 <- 1
+
+latent_y <- beta0 + beta1*G1 + beta2*G2 + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+
+
+p <- data %>% group_by(G1,G2) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+
+resultG2 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG2) <- c("G1=0","G1=1","G1=2")
+colnames(resultG2) <- c("1-0","2-1")
+knitr::kable(resultG2)
+
+### A weighted sum for G2's difference:
+((table(G1)[1]) * a1 + (table(G1)[2]) * a2 + (table(G1)[3]) * a3)/n
+
+
+#### Similarly for G1:
+
+p <- data %>% group_by(G2,G1) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+### A weighted sum:
+resultG1 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG1) <- c("G2=0","G2=1","G2=2")
+colnames(resultG1) <- c("1-0","2-1")
+knitr::kable(resultG1)
+((table(G2)[1]) * a1 + (table(G2)[2]) * a2 + (table(G2)[3]) * a3)/n
+```
+
+Based on the simulation above, it can be seen that in this case, $\Phi^{-1}\text{P}$ is both linear in $G_1$ and $G_2$, with the linear differences be very closed to their true coefficents. In reality, even when these differences tend to be linear, we cannot conclude that they are the correct estimates. Linearity can only help us to conclude whether interaction effect is present.
+
+Now for the same setup above, let's add a interaction between $G_1$ and $E$ with interaction effect $\beta_3 = 1$. The environmental factor $E$ is generated from $\text{N}(3,1)$.
+
+```{r eval=F}
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + beta3*G1*E + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+
+
+p <- data %>% group_by(G1,G2) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+
+resultG2 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG2) <- c("G1=0","G1=1","G1=2")
+colnames(resultG2) <- c("1-0","2-1")
+knitr::kable(resultG2)
+
+### A weighted sum for G2's difference:
+((table(G1)[1]) * a1 + (table(G1)[2]) * a2 + (table(G1)[3]) * a3)/n
+
+
+#### Similarly for G1:
+
+p <- data %>% group_by(G2,G1) %>% summarise(p = mean(y))
+a1 <- diff(qnorm(p$p[1:3]))
+a2 <- diff(qnorm(p$p[4:6]))
+a3 <- diff(qnorm(p$p[7:9]))
+### A weighted sum:
+resultG1 <- data.frame(rbind(a1,a2,a3))
+rownames(resultG1) <- c("G2=0","G2=1","G2=2")
+colnames(resultG1) <- c("1-0","2-1")
+knitr::kable(resultG1)
+((table(G2)[1]) * a1 + (table(G2)[2]) * a2 + (table(G2)[3]) * a3)/n
+```
+
+Now, it can be seen from the R output above that, $\Phi^{-1}\text{P}$ seems to be linear in $G_2$ with linear rate approximately 0.7. But $\Phi^{-1}\text{P}$ is definitely not linear in $G_1$ as 3.8 is not closed to 1.42. This is within our expectation since the interaction is only between $G_1$ and $E$. 
+
+
+
+
+
+
+
+## Potential Method 2: By modeling the interaction term as a random slope:
+
+First, let's rewrite our previous latent variable specification:
+\begin{equation}\label{eqn:latentformulationRandomSlope}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \beta_3 G_1 \times E_i + \epsilon_i \\
+      &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + U_i * G_1 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+U_i &= \beta_3 * E_i
+\end{aligned}
+\end{equation}
+
+Here $U_i$ can be thought as a random effect (random slope), being drawn from distribution $\text{N}(0,\sigma_u^2)$. Notice that $\sigma_u^2 = \beta_3^2\sigma_E^2$. Therefore, testing for $\beta_3 =0$ is equivalent to testing $\sigma_u^2 = 0$ for the random effects. In this case, we do not need to restrict our distribution to the probit model anymore. Since both probit model and logistic model are flexible enough to incorporate an observations-level random slopes. 
+(There shouldn't be any identifiability problem with have too many random slopes(same number as observations), as including an observations-level random intercepts is a common trick to account for overdispersion in Poisson regression.)
+
+
+
+
+
+
+
+### A simple simulation study:
+
+Fitting this probit model with observations-level random slope is computationally very hard, and lme4 seems to converge very slow when there is an interaction effect in the true model, so we fit models only using the first 30000 rows of the dataset for computational efficiency. We still use the same setting as previous to generate our data, i.e. true model is probit model, and we will try to fit both probit regression and logistic regression to see how they behave:
+
+Let's fit a probit model with observations-level random slope using lme4: First with interaction between $G_1$ and $E$
+
+```{r eval=F}
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + beta3*G1*E + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model1 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "probit"), data = data)
+summary(model1)
+#### The variance of the random slope seems to be very large, suggesting the presence of interaction
+```
+
+There is some warnings from lme4 about the convergence, but the fitted result can still be valid. It can be seen that the estimated variance of the random slope is quite large (237.4). The estimated parameters are not closed to the truth in this case.
+
+
+Then, try again to fit a probit model when the true model doesn't have interaction term:
+```{r eval=F}
+### If the true model does not have interaction
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model2 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "probit"), data = data)
+summary(model2)
+```
+
+This time the probit model doesn't take that long to be fitted. We can see that without the interaction effect in the true model, the estimated random slope has very small variance (0.004607), which is consistent with our expectation. The other parameters in the model are estimated accurately. The estimated parameters are very accurate.
+
+
+
+Since fitting probit model is computationally hard for lme4, what if we fit a logistic regression instead? First try it when the true model doesn't contain interaction:
+
+```{r eval=F}
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model3 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "logit"), data = data)
+summary(model3)
+```
+
+This time lme4 doesn't have any convergence warnings, maybe becasue fitting logistic regression is computationally easier than a probit model. The result is still consistent if we use logistic regression instead, $\sigma_u^2$ is estimated to be 0.06464, which is still very small. The estimated coefficents are not very closed to the truth becasue the true underlying model in this simulation is a probit model instead.
+
+Let's try again with the true model does have the interaction effect:
+
+```{r eval=F}
+set.seed(123)
+latent_y <- beta0 + beta1*G1 + beta2*G2 + beta3 * G1*E + rnorm(n = n)
+y <- ifelse(latent_y > 0,1,0)
+data <- data.frame(y = y, G1 = G1, G2 = G2)
+data$OLRE <- 1:nrow(data)
+model3 <- glmer(y~ G1 + G2 + (0+G1|OLRE) ,family = binomial(link = "logit"), data = data)
+summary(model3)
+```
+
+Again, lme4 seems to have some convergence warnings when the true model has interaction. Now with the interaction term in the true model, $\sigma_u^2$ is estimated to be $2833$ which is very large. To deal with the potential convergence issue, we could try some other optimizers in the lme4 package.
+
+For the next step, we can implement some boundary test to formally test the hypothesis $\sigma_u^2 = 0$ based on likelihood ratio, and try to come up with some way to do the joint testing of G's main effect and interaction effect.
+
+
+
+## Test Statistic for Method 1:
+
+Let $\hat{p_{ij}}$ denote the sample proportion of cases in the group with $G_1 = i$ and $G_2 = j$, then we know that $\hat{p_{ij}}$ will be independent across different i and j. Also, by CLT:
+$$\hat{p_{ij}} \sim N(p_{ij},\frac{p_{ij}(1-p_{ij})}{n_{ij}})$$ where $n_{ij}$ denote the number of observations in the (i,j) cell.
+
+By delta method: we can obtain the distribution of $\Phi^{-1}(\hat{p_{ij}})$ being:
+$$\Phi^{-1}(\hat{p_{ij}}) \sim N\bigg(\Phi^{-1}(p_{ij}),\frac{1}{\phi(\Phi^{-1}(p_{ij}))^2}\frac{p_{ij}(1-p_{ij})}{n_{ij}}\bigg)$$
+where $\phi$ denotes the density of a standard normal.
+
+Let $Z_{ij} = \Phi^{-1}(\hat{p_{ij}})$. The variance of $Z_{ij}$ can be estimated as $v_{ij} = \frac{1}{\phi(\Phi^{-1}(\hat{p_{ij}}))^2}\frac{\hat{p_{ij}}(1-\hat{p_{ij}})}{n_{ij}}\bigg)$, which is simply plugging $\hat{p_{ij}}$ for the unknown true probability $p_{ij}$. Let $S_1 = a_0(Z_{10}-Z_{00}) + a_1(Z_{11}-Z_{01}) + a_2(Z_{12}-Z_{02})$ and $S_2 = a_0(Z_{20}-Z_{10}) + a_1(Z_{21}-Z_{11}) + a_2(Z_{22}-Z_{12})$, where $a_i$ is weight given to each difference term, such that $\sum_{i=0}^2 a_i =0$. If the allele frequency of $G_1$ or $G_2$ is known. Then $a_i = P(G_2 =i)$ when we are testing for the interaction of $G_1$ with $E$. So $S_1$ and $S_2$ will have a nice interpretation being estimated expected effect of $G_1$.
+
+Under the null hypothesis that $\beta_3 =0$ which means no interaction between $G_1$ and $E$, we know that $\Phi^{-1}(p_{ij})$ should be linear in i. That is: $Z_{(i+1)j} - Z_{ij} \sim N(b_i,v_{(i+1)j} + v_{ij})$ for all j = 0,1,2. So: 
+$$S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg) $$
+
+$$S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg) $$
+
+with the covariance between $S_1$ and $S_2$ be denoted as C, which can be computed as:
+$$ C = \text{Cov}(S_1,S_2) = -\sum_{i=0}^{2}v_{1i}a_i^2 $$
+
+That means, if the null hypothesis is true, $$ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}$$. We will reject the null hypothesis when $T$ has a large value.
+
+
+
+
+
+
+
+## Difference between two potential methods
+
+\begin{enumerate}
+\item The first method relies on the assumption that the true underlying model is probit model, and the distribution of $E$ is normal. These assumptions shouldn't be too restrictive as it is said in the literature that probit model and logistic model tend to give similar results. However, the second method can be used for both probit model and logistic model. The only assumption in the second method is that $E$ follows a normal distribution.
+\item The next step for the first method is to develop a test statistic for testing the linearity. While for the second method, it seems like there are plenty of tools of testing at boudnary to test $\sigma_u = 0$, using likelihood ratio. It seems like in the second method, jointly testing for the main effect and interaction effect 
+\item For the simulations of sample size 300000, the first method is very efficent to compute as it basically just computes nine sample proportions and compute their difference. If we can find a good test statistic for this, the hypothesis testing will be efficient to carry out and scale to larger sample. The second method takes a very long time to converge when the interaction is actually present in the model, and lme4 tends to give some warnings about the potential convergence problems if a probit model is fitted and underlying model has the interaction effect. For a larger sample with more regressors, the computational loads will be bigger for the second method.
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

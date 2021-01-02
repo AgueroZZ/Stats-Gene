@@ -1,0 +1,813 @@
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provides euro and other symbols
+\else % if luatex or xelatex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage[]{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\usepackage{hyperref}
+\hypersetup{
+            pdftitle={Detecting interaction with unknown environmental covariate},
+            pdfauthor={Ziang Zhang},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs}
+% Fix footnotes in tables (requires footnote package)
+\IfFileExists{footnote.sty}{\usepackage{footnote}\makesavenoteenv{longtable}}{}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+% set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+
+\title{Detecting interaction with unknown environmental covariate}
+\author{Ziang Zhang}
+\date{15/10/2020}
+
+\begin{document}
+\maketitle
+
+\hypertarget{summary-of-current-idea}{%
+\section{Summary of current idea:}\label{summary-of-current-idea}}
+
+\hypertarget{latent-model-for-binary-data}{%
+\subsection{Latent Model for binary
+data}\label{latent-model-for-binary-data}}
+
+For binary response variable, it is often assumed that the reponse
+variable \(y_i\) conditioning on the regressors \(G_1,G_2\) come from a
+latent model such that: \begin{equation}\label{eqn:latentformulation}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\end{aligned}
+\end{equation}
+
+The unobserved latent variable \(Y_i^*\) determines whether the observed
+response variable \(Y_i\) is 0 or 1. The error term \(\epsilon_i\) in
+\(Y_i^*\) needs to have a completely known distribution, which can be
+\(\text{N}(0,1)\) for the model to become a probit model, or a logistic
+distribution with mean 0 and variance 3.28 for the model to become a
+logistic regression model.
+
+\hypertarget{potential-method-1-by-checking-linearity}{%
+\subsection{Potential Method 1: By checking
+linearity:}\label{potential-method-1-by-checking-linearity}}
+
+\hypertarget{when-the-true-model-does-not-contain-interaction-with-environmental-factor}{%
+\subsubsection{When the true model does not contain interaction with
+environmental
+factor}\label{when-the-true-model-does-not-contain-interaction-with-environmental-factor}}
+
+First, consider that the true underlying model for the response variable
+\(Y_i\) is a probit model without interaction effect, i.e:
+\begin{equation}\label{eqn:probitModel}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\epsilon_i &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Therefore, it can be shown that:
+\begin{equation}\label{eqn:probitModelLinearity}
+\begin{aligned}
+\text{P}(Y_i = 1| G_1, G_2) &= \text{P}(\epsilon_i > -(\beta_0 +\beta_1 G_1 + \beta_2 G_2)) \\
+&= 1 - \Phi(-(\beta_0 + \beta_1 G_1 + \beta_2 G_2)) \\
+&= \Phi(\beta_0 + \beta_1 G_1 + \beta_2 G_2)
+\end{aligned}
+\end{equation} Where \(\Phi(.)\) denote the CDF function of standard
+normal distribution. Therefore,
+\(\Phi^{-1}\bigg(\text{P}(Y_i = 1|G_1,G_2)\bigg)\) shoud be a linear
+function of both \(G_1\) and \(G_2\).
+
+\hypertarget{when-the-true-model-does-contain-gene-environment-interaction}{%
+\subsubsection{When the true model does contain gene-environment
+interaction}\label{when-the-true-model-does-contain-gene-environment-interaction}}
+
+Assume for simplicity that \(E_i\) the environmental variable has a
+normal distribution with mean \(\mu_E\) and variance \(\sigma_E^2\), and
+suppose that the true underlying model is:
+\begin{equation}\label{eqn:probitModelWithInteraction}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \beta_3 G_1 \times E + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+\epsilon_i &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Furthermore, we can compute that:
+\begin{equation}\label{eqn:probitModelWithInteraction_MeanVar}
+\begin{aligned}
+\text{E}(Y_i^*|G_1,G_2) &= \beta_0 + (\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2 \\
+\text{Var}(Y_i^*|G_1,G_2) &= (\beta_3 G_1)^2 \sigma_E^2 + 1 \\
+Y_i^*|G_1, G_2 &\sim \text{N}\bigg(\beta_0 + (\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2,  \big(\beta_3 G_1\big)^2 \sigma_E^2 + 1\bigg)
+\end{aligned}
+\end{equation}
+
+That implies that the probability we get a case for different levels of
+\(G_1\) and \(G_2\) will be:
+\begin{equation}\label{eqn:probitModelWithInteraction_Prob} 
+\begin{aligned} 
+\text{P}(Y = 1 | G_1, G_2) &= \text{P}(Y^* > 0| G_1, G_2) \\ 
+                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}} > \frac{-\text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}}) \\
+                           &= \Phi \bigg( \frac{\text{E}(Y^* |G_1,G_2)}{\sqrt{\text{Var}(Y^* |G_1,G_2)}} \bigg)
+\end{aligned}
+\end{equation}
+
+Therefore, applying the inverse CDF on both sides, we get
+\[\Phi^{-1} \bigg(\text{P}(Y = 1 | G_1, G_2) \bigg) = \frac{\beta_0+(\beta_1 + \beta_3 \mu_E)G_1 + \beta_2 G_2}{\sqrt{(\beta_3^2 G_1^2 \sigma_E^2 + 1)}} \].
+
+This is not a linear function of \(G_1\), but is a linear function of
+\(G_2\).
+
+\begin{enumerate}
+\item If the true underlying model also contains another regressor $Z$ but $Z$ is uncorrelated with $G_2$ for example. Then eventhough ignoring that regressor breaks the structural assumption of probit model, so that the fitted model without $Z$ is no longer a probit model (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y_i = 1|G_1,G_2))$ will still be a linear function of $G_2$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
+\item Since $P(Y_i = 1|G_1,G_2)$ is actually unknown in practice, we can estimate it using the sample proportion $\hat{P}(Y = 1|G_1 = g_1,G_2 = g_2) = \frac{\sum_{i=1}^{n} \text{I}\{y_i =1,G_{1i} = g_1, G_{2i} = g_2\}}{\sum_{i=1}^{n}  \text{I}\{G_{1i} = g_1, G_{2i} = g_2\}}$. We shouldn't use the fitted model to estimate them since our fitted model may be wrong.
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G_1,G_2$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G_1,G_2$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literatures, it seems like probit model and logistic model have really closed results in real applications.
+\item If this method is feasible, I will try to find a test statistic that has a nice asymptotic null distribution for the testing of linearity.
+\end{enumerate}
+
+\hypertarget{a-simple-simulation-study}{%
+\subsubsection{A simple simulation
+study:}\label{a-simple-simulation-study}}
+
+Let the sample size be 300000. Let \(G_1\) and \(G_2\) be randomly
+generated from two multinomial distribution. Assuming their effects are
+additive with coefficient \(1.5\) and \(1\) respectively. First consider
+the case when no interaction is present:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{###### For a simulation of size n:}
+\NormalTok{n =}\StringTok{ }\DecValTok{300000}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+
+
+
+\CommentTok{##### Generate random genotype for G1 and G2, and a normal environmental factor that is unknown:}
+\NormalTok{G1 =}\StringTok{ }\KeywordTok{apply}\NormalTok{(}\DataTypeTok{X =} \KeywordTok{rmultinom}\NormalTok{(n,}\DecValTok{1}\NormalTok{,}\DataTypeTok{prob =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.2}\NormalTok{,}\FloatTok{0.5}\NormalTok{,}\FloatTok{0.3}\NormalTok{))}\OperatorTok{>}\DecValTok{0}\NormalTok{, }\DataTypeTok{FUN =} \StringTok{"which"}\NormalTok{,}\DataTypeTok{MARGIN =} \DecValTok{2}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}
+\NormalTok{G2 =}\StringTok{ }\KeywordTok{apply}\NormalTok{(}\DataTypeTok{X =} \KeywordTok{rmultinom}\NormalTok{(n,}\DecValTok{1}\NormalTok{,}\DataTypeTok{prob =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.3}\NormalTok{,}\FloatTok{0.5}\NormalTok{,}\FloatTok{0.2}\NormalTok{))}\OperatorTok{>}\DecValTok{0}\NormalTok{, }\DataTypeTok{FUN =} \StringTok{"which"}\NormalTok{,}\DataTypeTok{MARGIN =} \DecValTok{2}\NormalTok{)  }\DecValTok{-1}
+\NormalTok{E <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =} \DecValTok{3}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{)}
+
+\CommentTok{### Case 1: If the true model is nicely additive without interaction (Assuming probit model, inverse normal CDF as link function)}
+\NormalTok{beta0 <-}\StringTok{ }\DecValTok{-3}
+\NormalTok{beta1 <-}\StringTok{ }\FloatTok{1.5}
+\NormalTok{beta2 <-}\StringTok{ }\DecValTok{1}
+\NormalTok{beta3 <-}\StringTok{ }\DecValTok{1}
+
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+
+
+\NormalTok{p <-}\StringTok{ }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(G1,G2) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{p =} \KeywordTok{mean}\NormalTok{(y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'G1' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a1 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{]))}
+\NormalTok{a2 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{4}\OperatorTok{:}\DecValTok{6}\NormalTok{]))}
+\NormalTok{a3 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{7}\OperatorTok{:}\DecValTok{9}\NormalTok{]))}
+
+\NormalTok{resultG2 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{rbind}\NormalTok{(a1,a2,a3))}
+\KeywordTok{rownames}\NormalTok{(resultG2) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"G1=0"}\NormalTok{,}\StringTok{"G1=1"}\NormalTok{,}\StringTok{"G1=2"}\NormalTok{)}
+\KeywordTok{colnames}\NormalTok{(resultG2) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"1-0"}\NormalTok{,}\StringTok{"2-1"}\NormalTok{)}
+\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(resultG2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+& 1-0 & 2-1\tabularnewline
+\midrule
+\endhead
+G1=0 & 1.0274514 & 0.9804426\tabularnewline
+G1=1 & 0.9972533 & 1.0021970\tabularnewline
+G1=2 & 1.0163421 & 0.9899940\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{### A weighted sum for G2's difference:}
+\NormalTok{((}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{2}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{3}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a3)}\OperatorTok{/}\NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.0089930 0.9942029
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#### Similarly for G1:}
+
+\NormalTok{p <-}\StringTok{ }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(G2,G1) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{p =} \KeywordTok{mean}\NormalTok{(y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'G2' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a1 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{]))}
+\NormalTok{a2 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{4}\OperatorTok{:}\DecValTok{6}\NormalTok{]))}
+\NormalTok{a3 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{7}\OperatorTok{:}\DecValTok{9}\NormalTok{]))}
+\CommentTok{### A weighted sum:}
+\NormalTok{resultG1 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{rbind}\NormalTok{(a1,a2,a3))}
+\KeywordTok{rownames}\NormalTok{(resultG1) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"G2=0"}\NormalTok{,}\StringTok{"G2=1"}\NormalTok{,}\StringTok{"G2=2"}\NormalTok{)}
+\KeywordTok{colnames}\NormalTok{(resultG1) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"1-0"}\NormalTok{,}\StringTok{"2-1"}\NormalTok{)}
+\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(resultG1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+& 1-0 & 2-1\tabularnewline
+\midrule
+\endhead
+G2=0 & 1.511206 & 1.502123\tabularnewline
+G2=1 & 1.481008 & 1.521211\tabularnewline
+G2=2 & 1.502763 & 1.509008\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{((}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{2}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{3}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a3)}\OperatorTok{/}\NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.494402 1.513055
+\end{verbatim}
+
+Based on the simulation above, it can be seen that in this case,
+\(\Phi^{-1}\text{P}\) is both linear in \(G_1\) and \(G_2\), with the
+linear differences be very closed to their true coefficents. In reality,
+even when these differences tend to be linear, we cannot conclude that
+they are the correct estimates. Linearity can only help us to conclude
+whether interaction effect is present.
+
+Now for the same setup above, let's add a interaction between \(G_1\)
+and \(E\) with interaction effect \(\beta_3 = 1\). The environmental
+factor \(E\) is generated from \(\text{N}(3,1)\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{beta3}\OperatorTok{*}\NormalTok{G1}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+
+
+\NormalTok{p <-}\StringTok{ }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(G1,G2) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{p =} \KeywordTok{mean}\NormalTok{(y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'G1' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a1 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{]))}
+\NormalTok{a2 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{4}\OperatorTok{:}\DecValTok{6}\NormalTok{]))}
+\NormalTok{a3 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{7}\OperatorTok{:}\DecValTok{9}\NormalTok{]))}
+
+\NormalTok{resultG2 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{rbind}\NormalTok{(a1,a2,a3))}
+\KeywordTok{rownames}\NormalTok{(resultG2) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"G1=0"}\NormalTok{,}\StringTok{"G1=1"}\NormalTok{,}\StringTok{"G1=2"}\NormalTok{)}
+\KeywordTok{colnames}\NormalTok{(resultG2) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"1-0"}\NormalTok{,}\StringTok{"2-1"}\NormalTok{)}
+\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(resultG2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+& 1-0 & 2-1\tabularnewline
+\midrule
+\endhead
+G1=0 & 1.0183975 & 0.9669660\tabularnewline
+G1=1 & 0.7145236 & 0.6647753\tabularnewline
+G1=2 & 0.4875553 & 0.5203277\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{### A weighted sum for G2's difference:}
+\NormalTok{((}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{2}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G1)[}\DecValTok{3}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a3)}\OperatorTok{/}\NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.7073273 0.6819229
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#### Similarly for G1:}
+
+\NormalTok{p <-}\StringTok{ }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(G2,G1) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{p =} \KeywordTok{mean}\NormalTok{(y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'G2' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a1 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{]))}
+\NormalTok{a2 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{4}\OperatorTok{:}\DecValTok{6}\NormalTok{]))}
+\NormalTok{a3 <-}\StringTok{ }\KeywordTok{diff}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(p}\OperatorTok{$}\NormalTok{p[}\DecValTok{7}\OperatorTok{:}\DecValTok{9}\NormalTok{]))}
+\CommentTok{### A weighted sum:}
+\NormalTok{resultG1 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{rbind}\NormalTok{(a1,a2,a3))}
+\KeywordTok{rownames}\NormalTok{(resultG1) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"G2=0"}\NormalTok{,}\StringTok{"G2=1"}\NormalTok{,}\StringTok{"G2=2"}\NormalTok{)}
+\KeywordTok{colnames}\NormalTok{(resultG1) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"1-0"}\NormalTok{,}\StringTok{"2-1"}\NormalTok{)}
+\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(resultG1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+& 1-0 & 2-1\tabularnewline
+\midrule
+\endhead
+G2=0 & 4.082256 & 1.615465\tabularnewline
+G2=1 & 3.778382 & 1.388497\tabularnewline
+G2=2 & 3.476191 & 1.244049\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{((}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{2}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{table}\NormalTok{(G2)[}\DecValTok{3}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{a3)}\OperatorTok{/}\NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 3.808773 1.427475
+\end{verbatim}
+
+Now, it can be seen from the R output above that, \(\Phi^{-1}\text{P}\)
+seems to be linear in \(G_2\) with linear rate approximately 0.7. But
+\(\Phi^{-1}\text{P}\) is definitely not linear in \(G_1\) as 3.8 is not
+closed to 1.42. This is within our expectation since the interaction is
+only between \(G_1\) and \(E\).
+
+\hypertarget{potential-method-2-by-modeling-the-interaction-term-as-a-random-slope}{%
+\subsection{Potential Method 2: By modeling the interaction term as a
+random
+slope:}\label{potential-method-2-by-modeling-the-interaction-term-as-a-random-slope}}
+
+First, let's rewrite our previous latent variable specification:
+\begin{equation}\label{eqn:latentformulationRandomSlope}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + \beta_3 G_1 \times E_i + \epsilon_i \\
+      &= \beta_0 + \beta_1 G_1 + \beta_2 G_2 + U_i * G_1 + \epsilon_i \\
+Y_i &= I\{Y_i^*>0\} \\
+U_i &= \beta_3 * E_i
+\end{aligned}
+\end{equation}
+
+Here \(U_i\) can be thought as a random effect (random slope), being
+drawn from distribution \(\text{N}(0,\sigma_u^2)\). Notice that
+\(\sigma_u^2 = \beta_3^2\sigma_E^2\). Therefore, testing for
+\(\beta_3 =0\) is equivalent to testing \(\sigma_u^2 = 0\) for the
+random effects. In this case, we do not need to restrict our
+distribution to the probit model anymore. Since both probit model and
+logistic model are flexible enough to incorporate an observations-level
+random slopes. (There shouldn't be any identifiability problem with have
+too many random slopes(same number as observations), as including an
+observations-level random intercepts is a common trick to account for
+overdispersion in Poisson regression.)
+
+\hypertarget{a-simple-simulation-study-1}{%
+\subsubsection{A simple simulation
+study:}\label{a-simple-simulation-study-1}}
+
+Fitting this probit model with observations-level random slope is
+computationally very hard, and lme4 seems to converge very slow when
+there is an interaction effect in the true model, so we fit models only
+using the first 30000 rows of the dataset for computational efficiency.
+We still use the same setting as previous to generate our data,
+i.e.~true model is probit model, and we will try to fit both probit
+regression and logistic regression to see how they behave:
+
+Let's fit a probit model with observations-level random slope using
+lme4: First with interaction between \(G_1\) and \(E\)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{beta3}\OperatorTok{*}\NormalTok{G1}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+\NormalTok{data}\OperatorTok{$}\NormalTok{OLRE <-}\StringTok{ }\DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(data)}
+\NormalTok{model1 <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(y}\OperatorTok{~}\StringTok{ }\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{0}\OperatorTok{+}\NormalTok{G1}\OperatorTok{|}\NormalTok{OLRE) ,}\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"probit"}\NormalTok{), }\DataTypeTok{data =}\NormalTok{ data[}\DecValTok{1}\OperatorTok{:}\DecValTok{30000}\NormalTok{,])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+## Model failed to converge with max|grad| = 0.0202522 (tol = 0.002, component 1)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(model1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: binomial  ( probit )
+## Formula: y ~ G1 + G2 + (0 + G1 | OLRE)
+##    Data: data[1:30000, ]
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##   4820.3   4853.6  -2406.2   4812.3    29996 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -0.4301  0.0000  0.0000  0.0001 26.2608 
+## 
+## Random effects:
+##  Groups Name Variance Std.Dev.
+##  OLRE   G1   237.4    15.41   
+## Number of obs: 30000, groups:  OLRE, 30000
+## 
+## Fixed effects:
+##              Estimate Std. Error z value Pr(>|z|)    
+## (Intercept) -2.978577   0.004425  -673.0   <2e-16 ***
+## G1           7.631677   0.004448  1715.8   <2e-16 ***
+## G2           0.983989   0.004130   238.3   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Correlation of Fixed Effects:
+##    (Intr) G1    
+## G1 -0.020       
+## G2 -0.040 -0.036
+## convergence code: 0
+## Model failed to converge with max|grad| = 0.0202522 (tol = 0.002, component 1)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#### The variance of the random slope seems to be very large, suggesting the presence of interaction}
+\end{Highlighting}
+\end{Shaded}
+
+There is some warnings from lme4 about the convergence, but the fitted
+result can still be valid. It can be seen that the estimated variance of
+the random slope is quite large (237.4). The estimated parameters are
+not closed to the truth in this case.
+
+Then, try again to fit a probit model when the true model doesn't have
+interaction term:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{### If the true model does not have interaction}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+\NormalTok{data}\OperatorTok{$}\NormalTok{OLRE <-}\StringTok{ }\DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(data)}
+\NormalTok{model2 <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(y}\OperatorTok{~}\StringTok{ }\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{0}\OperatorTok{+}\NormalTok{G1}\OperatorTok{|}\NormalTok{OLRE) ,}\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"probit"}\NormalTok{), }\DataTypeTok{data =}\NormalTok{ data[}\DecValTok{1}\OperatorTok{:}\DecValTok{30000}\NormalTok{,])}
+\KeywordTok{summary}\NormalTok{(model2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: binomial  ( probit )
+## Formula: y ~ G1 + G2 + (0 + G1 | OLRE)
+##    Data: data[1:30000, ]
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##  24990.9  25024.2 -12491.5  24982.9    29996 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -6.3731 -0.6630 -0.1496  0.4311 28.7505 
+## 
+## Random effects:
+##  Groups Name Variance Std.Dev.
+##  OLRE   G1   0.004607 0.06788 
+## Number of obs: 30000, groups:  OLRE, 30000
+## 
+## Fixed effects:
+##             Estimate Std. Error z value Pr(>|z|)    
+## (Intercept) -3.03359    0.03831  -79.19   <2e-16 ***
+## G1           1.50949    0.02141   70.50   <2e-16 ***
+## G2           1.01741    0.01726   58.93   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Correlation of Fixed Effects:
+##    (Intr) G1    
+## G1 -0.907       
+## G2 -0.806  0.580
+\end{verbatim}
+
+This time the probit model doesn't take that long to be fitted. We can
+see that without the interaction effect in the true model, the estimated
+random slope has very small variance (0.004607), which is consistent
+with our expectation. The other parameters in the model are estimated
+accurately. The estimated parameters are very accurate.
+
+Since fitting probit model is computationally hard for lme4, what if we
+fit a logistic regression instead? First try it when the true model
+doesn't contain interaction:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+\NormalTok{data}\OperatorTok{$}\NormalTok{OLRE <-}\StringTok{ }\DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(data)}
+\NormalTok{model3 <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(y}\OperatorTok{~}\StringTok{ }\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{0}\OperatorTok{+}\NormalTok{G1}\OperatorTok{|}\NormalTok{OLRE) ,}\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{), }\DataTypeTok{data =}\NormalTok{ data[}\DecValTok{1}\OperatorTok{:}\DecValTok{30000}\NormalTok{,])}
+\KeywordTok{summary}\NormalTok{(model3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: binomial  ( logit )
+## Formula: y ~ G1 + G2 + (0 + G1 | OLRE)
+##    Data: data[1:30000, ]
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##  25023.2  25056.4 -12507.6  25015.2    29996 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -5.2610 -0.6385 -0.1707  0.4037 14.3478 
+## 
+## Random effects:
+##  Groups Name Variance Std.Dev.
+##  OLRE   G1   0.06464  0.2542  
+## Number of obs: 30000, groups:  OLRE, 30000
+## 
+## Fixed effects:
+##             Estimate Std. Error z value Pr(>|z|)    
+## (Intercept) -5.32720    0.08066  -66.04   <2e-16 ***
+## G1           2.65670    0.04492   59.15   <2e-16 ***
+## G2           1.79198    0.03395   52.79   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Correlation of Fixed Effects:
+##    (Intr) G1    
+## G1 -0.934       
+## G2 -0.850  0.678
+\end{verbatim}
+
+This time lme4 doesn't have any convergence warnings, maybe becasue
+fitting logistic regression is computationally easier than a probit
+model. The result is still consistent if we use logistic regression
+instead, \(\sigma_u^2\) is estimated to be 0.06464, which is still very
+small. The estimated coefficents are not very closed to the truth
+becasue the true underlying model in this simulation is a probit model
+instead.
+
+Let's try again with the true model does have the interaction effect:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{latent_y <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{beta1}\OperatorTok{*}\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{beta2}\OperatorTok{*}\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{beta3 }\OperatorTok{*}\StringTok{ }\NormalTok{G1}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n)}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(latent_y }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\NormalTok{data <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{G1 =}\NormalTok{ G1, }\DataTypeTok{G2 =}\NormalTok{ G2)}
+\NormalTok{data}\OperatorTok{$}\NormalTok{OLRE <-}\StringTok{ }\DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(data)}
+\NormalTok{model3 <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(y}\OperatorTok{~}\StringTok{ }\NormalTok{G1 }\OperatorTok{+}\StringTok{ }\NormalTok{G2 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{0}\OperatorTok{+}\NormalTok{G1}\OperatorTok{|}\NormalTok{OLRE) ,}\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{), }\DataTypeTok{data =}\NormalTok{ data[}\DecValTok{1}\OperatorTok{:}\DecValTok{30000}\NormalTok{,])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+## Model failed to converge with max|grad| = 0.127451 (tol = 0.002, component 1)
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, : Model is nearly unidentifiable: very large eigenvalue
+##  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+##  - Rescale variables?
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(model3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: binomial  ( logit )
+## Formula: y ~ G1 + G2 + (0 + G1 | OLRE)
+##    Data: data[1:30000, ]
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##   4685.8   4719.0  -2338.9   4677.8    29996 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -0.4419  0.0000  0.0000  0.0007 21.1998 
+## 
+## Random effects:
+##  Groups Name Variance Std.Dev.
+##  OLRE   G1   2833     53.23   
+## Number of obs: 30000, groups:  OLRE, 30000
+## 
+## Fixed effects:
+##               Estimate Std. Error z value Pr(>|z|)    
+## (Intercept) -6.1079801  0.0006049  -10097   <2e-16 ***
+## G1          18.4230853  0.0005878   31342   <2e-16 ***
+## G2           2.2374098  0.0006045    3701   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Correlation of Fixed Effects:
+##    (Intr) G1    
+## G1  0.020       
+## G2 -0.231  0.019
+## convergence code: 0
+## Model failed to converge with max|grad| = 0.127451 (tol = 0.002, component 1)
+## Model is nearly unidentifiable: very large eigenvalue
+##  - Rescale variables?
+## Model is nearly unidentifiable: large eigenvalue ratio
+##  - Rescale variables?
+\end{verbatim}
+
+Again, lme4 seems to have some convergence warnings when the true model
+has interaction. Now with the interaction term in the true model,
+\(\sigma_u^2\) is estimated to be \(2833\) which is very large. To deal
+with the potential convergence issue, we could try some other optimizers
+in the lme4 package.
+
+For the next step, we can implement some boundary test to formally test
+the hypothesis \(\sigma_u^2 = 0\) based on likelihood ratio, and try to
+come up with some way to do the joint testing of G's main effect and
+interaction effect.
+
+\hypertarget{test-statistic-for-method-1}{%
+\subsection{Test Statistic for Method
+1:}\label{test-statistic-for-method-1}}
+
+Let \(\hat{p_{ij}}\) denote the sample proportion of cases in the group
+with \(G_1 = i\) and \(G_2 = j\), then we know that \(\hat{p_{ij}}\)
+will be independent across different i and j. Also, by CLT:
+\[\hat{p_{ij}} \sim N(p_{ij},\frac{p_{ij}(1-p_{ij})}{n_{ij}})\] where
+\(n_{ij}\) denote the number of observations in the (i,j) cell.
+
+By delta method: we can obtain the distribution of
+\(\Phi^{-1}(\hat{p_{ij}})\) being:
+\[\Phi^{-1}(\hat{p_{ij}}) \sim N\bigg(\Phi^{-1}(p_{ij}),\frac{1}{\phi(\Phi^{-1}(p_{ij}))^2}\frac{p_{ij}(1-p_{ij})}{n_{ij}}\bigg)\]
+where \(\phi\) denotes the density of a standard normal.
+
+Let \(Z_{ij} = \Phi^{-1}(\hat{p_{ij}})\). The variance of \(Z_{ij}\) can
+be estimated as
+\(v_{ij} = \frac{1}{\phi(\Phi^{-1}(\hat{p_{ij}}))^2}\frac{\hat{p_{ij}}(1-\hat{p_{ij}})}{n_{ij}}\bigg)\),
+which is simply plugging \(\hat{p_{ij}}\) for the unknown true
+probability \(p_{ij}\). Let
+\(S_1 = a_0(Z_{10}-Z_{00}) + a_1(Z_{11}-Z_{01}) + a_2(Z_{12}-Z_{02})\)
+and
+\(S_2 = a_0(Z_{20}-Z_{10}) + a_1(Z_{21}-Z_{11}) + a_2(Z_{22}-Z_{12})\),
+where \(a_i\) is weight given to each difference term, such that
+\(\sum_{i=0}^2 a_i =0\). If the allele frequency of \(G_1\) or \(G_2\)
+is known. Then \(a_i = P(G_2 =i)\) when we are testing for the
+interaction of \(G_1\) with \(E\). So \(S_1\) and \(S_2\) will have a
+nice interpretation being estimated expected effect of \(G_1\).
+
+Under the null hypothesis that \(\beta_3 =0\) which means no interaction
+between \(G_1\) and \(E\), we know that \(\Phi^{-1}(p_{ij})\) should be
+linear in i. That is:
+\(Z_{(i+1)j} - Z_{ij} \sim N(b_i,v_{(i+1)j} + v_{ij})\) for all j =
+0,1,2. So:
+\[S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg) \]
+
+\[S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg) \]
+
+with the covariance between \(S_1\) and \(S_2\) be denoted as C, which
+can be computed as:
+\[ C = \text{Cov}(S_1,S_2) = -\sum_{i=0}^{2}v_{1i}a_i^2 \]
+
+That means, if the null hypothesis is true,
+\[ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}\].
+We will reject the null hypothesis when \(T\) has a large value.
+
+\hypertarget{difference-between-two-potential-methods}{%
+\subsection{Difference between two potential
+methods}\label{difference-between-two-potential-methods}}
+
+\begin{enumerate}
+\item The first method relies on the assumption that the true underlying model is probit model, and the distribution of $E$ is normal. These assumptions shouldn't be too restrictive as it is said in the literature that probit model and logistic model tend to give similar results. However, the second method can be used for both probit model and logistic model. The only assumption in the second method is that $E$ follows a normal distribution.
+\item The next step for the first method is to develop a test statistic for testing the linearity. While for the second method, it seems like there are plenty of tools of testing at boudnary to test $\sigma_u = 0$, using likelihood ratio. It seems like in the second method, jointly testing for the main effect and interaction effect 
+\item For the simulations of sample size 300000, the first method is very efficent to compute as it basically just computes nine sample proportions and compute their difference. If we can find a good test statistic for this, the hypothesis testing will be efficient to carry out and scale to larger sample. The second method takes a very long time to converge when the interaction is actually present in the model, and lme4 tends to give some warnings about the potential convergence problems if a probit model is fitted and underlying model has the interaction effect. For a larger sample with more regressors, the computational loads will be bigger for the second method.
+
+\end{enumerate}
+
+\end{document}
