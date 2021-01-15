@@ -1,39 +1,46 @@
-\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 %
-\documentclass[]{article}
+\documentclass[
+]{article}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
-\usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   \usepackage[T1]{fontenc}
   \usepackage[utf8]{inputenc}
-  \usepackage{textcomp} % provides euro and other symbols
-\else % if luatex or xelatex
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
   \usepackage{unicode-math}
-  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
 \fi
-% use upquote if available, for straight quotes in verbatim environments
+% Use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
-% use microtype if available
-\IfFileExists{microtype.sty}{%
-\usepackage[]{microtype}
-\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
-\IfFileExists{parskip.sty}{%
-\usepackage{parskip}
-}{% else
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{6pt plus 2pt minus 1pt}
-}
-\usepackage{hyperref}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-            pdftitle={Progress report: Detecting interaction with unknown environmental covariate},
-            pdfauthor={Ziang Zhang},
-            pdfborder={0 0 0},
-            breaklinks=true}
-\urlstyle{same}  % don't use monospace font for urls
+  pdftitle={Progress report: Detecting interaction with unknown environmental covariate},
+  pdfauthor={Ziang Zhang},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
 \usepackage[margin=1in]{geometry}
 \usepackage{color}
 \usepackage{fancyvrb}
@@ -84,25 +91,14 @@
 % margins by default, and it is still possible to overwrite the defaults
 % using explicit options in \includegraphics[width, height, ...]{}
 \setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
-\setlength{\emergencystretch}{3em}  % prevent overfull lines
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\setcounter{secnumdepth}{5}
-% Redefines (sub)paragraphs to behave more like sections
-\ifx\paragraph\undefined\else
-\let\oldparagraph\paragraph
-\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
-\fi
-\ifx\subparagraph\undefined\else
-\let\oldsubparagraph\subparagraph
-\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
-\fi
-
-% set default figure placement to htbp
+% Set default figure placement to htbp
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
-
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
 
 \title{Progress report: Detecting interaction with unknown environmental
 covariate}
@@ -179,7 +175,7 @@ normal distribution with mean \(\mu_E\) and variance \(\sigma_E^2\), and
 suppose that the true underlying model is:
 \begin{equation}\label{eqn:probitModelWithInteraction}
 \begin{aligned}
-Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_{G\times E} G_i \times E + \epsilon_i \\
+Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_{G\times E} G_i \times E_i + \epsilon_i \\
 Y_i &= I\{Y_i^*>0\} \\
 \epsilon_i &\sim \text{N}(0,1)
 \end{aligned}
@@ -205,7 +201,7 @@ That implies that the probability we get a case for different levels of
 \end{equation}
 
 Therefore, applying the inverse CDF on both sides, we get
-\[\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+(\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G_i^2 \sigma_E^2 + 1)}} \].
+\[\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+(\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G_i^2 \sigma_E^2 + 1)}} \]
 
 This is not a linear function of \(G_i\), but is a linear function of
 \(Z_i\).
@@ -213,7 +209,7 @@ This is not a linear function of \(G_i\), but is a linear function of
 \begin{enumerate}
 \item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then eventhough ignoring that regressor breaks the structural assumption of probit model, so that the fitted model without $W$ is no longer a probit model (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y_i = 1|G_i,Z_i))$ will still be a linear function of $G_i$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
 \item Since $P(Y_i = 1|G_i,Z_i)$ is actually unknown in practice, we can estimate it using the sample proportion $\hat{P}(Y = 1|G = g,Z = z) = \frac{\sum_{i=1}^{n} \text{I}\{y_i =1,G_{i} = g, Z_{i} = z\}}{\sum_{i=1}^{n}  \text{I}\{G_{i} = g, Z_{i} = z\}}$. We shouldn't use the fitted model to estimate them since our fitted model may be wrong.
-\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literatures, it seems like probit model and logistic model have really closed results in real applications.
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literature, it seems like probit model and logistic model have really closed results in real applications.
 \end{enumerate}
 
 \hypertarget{test-statistic-of-this-method}{%
@@ -222,7 +218,7 @@ method:}\label{test-statistic-of-this-method}}
 
 This method relies on the checking of linearity of \(\Phi^{-1}(P)\), so
 the test statistics will also be focusing on the detection of linearity.
-Depending on the type of data availiable, there will be several slightly
+Depending on the type of data available, there will be several slightly
 different test statistics for different cases.
 
 \hypertarget{case-1-when-g-is-the-only-regressor-in-the-model}{%
@@ -238,7 +234,7 @@ If the two competing models are: \begin{equation}
 
 Let \(p_i = P(Y = 1|G=i)\), which can be approximated by the sample
 proportion \(\hat{p_i}\). We know that
-\[\Phi^{-1}(\hat{p_i}) \sim N\bigg(\Phi^{-1}(p_i), \frac{1}{\phi(\Phi^{-1}(p_i))^2} \frac{p_i(1-p_i)}{n_i}\bigg)\].
+\[\Phi^{-1}(\hat{p_i}) \sim N\bigg(\Phi^{-1}(p_i), \frac{1}{\phi(\Phi^{-1}(p_i))^2} \frac{p_i(1-p_i)}{n_i}\bigg)\]
 Here \(n_i\) denotes the number of \(G = i\) in our dataset. Let
 \(v_i = \frac{1}{\phi(\Phi^{-1}(\hat{p_i}))^2} \frac{\hat{p_i}(1-\hat{p_i})}{n_i}\)
 denote the estimate of \(Var(\Phi^{-1}(\hat{p_i}))\).
@@ -289,16 +285,16 @@ interaction between \(G\) and \(E\), we know that \(\Phi^{-1}(p_{ij})\)
 should be linear in i. That is:
 \(W_{(i+1)j} - W_{ij} \sim N(b_i,v_{(i+1)j} + v_{ij})\) for all j =
 0,1,2. So:
-\[S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg) \]
+\[S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg)\]
 
-\[S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg) \]
+\[S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg)\]
 
 with the covariance between \(S_1\) and \(S_2\) be denoted as C, which
 can be computed as:
 \[ C = \text{Cov}(S_1,S_2) = -\sum_{i=0}^{2}v_{1i}a_i^2 \]
 
 That means, if the null hypothesis is true,
-\[ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}\].
+\[ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}\]
 We will reject the null hypothesis when \(T\) has a large value.
 
 \textbf{Question to study:} If \(G\) and \(Z\) are uncorrelated, we can
@@ -377,12 +373,12 @@ between \(G\) and \(E\) can be thought as following. In the first
 regression, we are actually trying to get an estimate of
 \(\eta = \frac{\text{E}(Y^*|G)}{\sqrt{\text{Var}(Y^*|G)}}\). Recall from
 the first section, if there is interaction between \(G\) and \(E\), then
-\(\eta\) will be non-linear in \(G\) due to the fact that \$
-\text{Var}(Y\^{}*\textbar{}G)\}\$ will be non-constant (We cannot
-directly test on whether \(Y^*\) has constant variance because it is not
-estimatable). Therefore, if we observe that \(\hat{\eta}\) is linear in
-\(G\), which means \(\gamma_2 = \gamma_1\), then we can be reasonable
-confirmative that there is no interaction present in the model.
+\(\eta\) will be non-linear in \(G\) due to the fact that
+\(\text{Var}(Y^*|G)\) will be non-constant (We cannot directly test on
+whether \(Y^*\) has constant variance because it is not estimable).
+Therefore, if we observe that \(\hat{\eta}\) is linear in \(G\), which
+means \(\gamma_2 = \gamma_1\), then we can be reasonable confident that
+there is no interaction present in the model.
 
 We can use the first stage regression to obtain accurate estimate of
 \(\eta\) because regardless whether \(\eta\) is linear in G, we know
@@ -401,11 +397,11 @@ G:}\label{joint-testing-of-main-effect-and-interaction-effect-of-g}}
 Suppose that we have the following true latent model:
 \[ Y_i ^{*} = \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_E E_i + \beta_{G\times E}G_i \times E_i + \epsilon_i \].
 Then like we have derived in the previous section, we know that:
-\[Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i,  \big(\beta_{G\times E} G_i\big)^2 \sigma_E^2 + 1\bigg)\],
+\[Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i,  \big(\beta_{G\times E} G_i\big)^2 \sigma_E^2 + 1\bigg)\]
 Assume without loss of generality that \(E\) has been standardized to
 \(\text{N}(0,1)\), and define \(\gamma = \beta_{G\times E}^2\), then the
 above model can be simplified into:
-\[Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + \beta_GG_i + \beta_ZZ_i,\ \gamma G^2 + 1\bigg)\].
+\[Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + \beta_GG_i + \beta_ZZ_i,\ \gamma G^2 + 1\bigg)\]
 
 This model is identifiable, and we can fit it using maximum likelihood
 estimation (Actually there is a Rpackage that can fit \(Y^*\) with

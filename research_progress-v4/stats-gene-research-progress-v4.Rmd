@@ -62,7 +62,7 @@ Where $\Phi(.)$ denote the CDF function of standard normal distribution. Therefo
 Assume for simplicity that $E_i$ the environmental variable has a normal distribution with mean $\mu_E$ and variance $\sigma_E^2$, and suppose that the true underlying model is:
 \begin{equation}\label{eqn:probitModelWithInteraction}
 \begin{aligned}
-Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_{G\times E} G_i \times E + \epsilon_i \\
+Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_{G\times E} G_i \times E_i + \epsilon_i \\
 Y_i &= I\{Y_i^*>0\} \\
 \epsilon_i &\sim \text{N}(0,1)
 \end{aligned}
@@ -87,19 +87,19 @@ That implies that the probability we get a case for different levels of $G_i$ an
 \end{equation}
 
 
-Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+(\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G_i^2 \sigma_E^2 + 1)}} $$. 
+Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+(\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G_i^2 \sigma_E^2 + 1)}} $$ 
 
 This is not a linear function of $G_i$, but is a linear function of $Z_i$.
 
 \begin{enumerate}
 \item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then eventhough ignoring that regressor breaks the structural assumption of probit model, so that the fitted model without $W$ is no longer a probit model (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y_i = 1|G_i,Z_i))$ will still be a linear function of $G_i$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
 \item Since $P(Y_i = 1|G_i,Z_i)$ is actually unknown in practice, we can estimate it using the sample proportion $\hat{P}(Y = 1|G = g,Z = z) = \frac{\sum_{i=1}^{n} \text{I}\{y_i =1,G_{i} = g, Z_{i} = z\}}{\sum_{i=1}^{n}  \text{I}\{G_{i} = g, Z_{i} = z\}}$. We shouldn't use the fitted model to estimate them since our fitted model may be wrong.
-\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literatures, it seems like probit model and logistic model have really closed results in real applications.
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, based on the literature, it seems like probit model and logistic model have really closed results in real applications.
 \end{enumerate}
 
 ### Test Statistic of this method:
 
-This method relies on the checking of linearity of $\Phi^{-1}(P)$, so the test statistics will also be focusing on the detection of linearity. Depending on the type of data availiable, there will be several slightly different test statistics for different cases.
+This method relies on the checking of linearity of $\Phi^{-1}(P)$, so the test statistics will also be focusing on the detection of linearity. Depending on the type of data available, there will be several slightly different test statistics for different cases.
 
 #### Case 1: When G is the only regressor in the model
 
@@ -112,7 +112,7 @@ If the two competing models are:
 \end{equation}
 
 Let $p_i = P(Y = 1|G=i)$, which can be approximated by the sample proportion $\hat{p_i}$.
-We know that $$\Phi^{-1}(\hat{p_i}) \sim N\bigg(\Phi^{-1}(p_i), \frac{1}{\phi(\Phi^{-1}(p_i))^2} \frac{p_i(1-p_i)}{n_i}\bigg)$$.
+We know that $$\Phi^{-1}(\hat{p_i}) \sim N\bigg(\Phi^{-1}(p_i), \frac{1}{\phi(\Phi^{-1}(p_i))^2} \frac{p_i(1-p_i)}{n_i}\bigg)$$
 Here $n_i$ denotes the number of $G = i$ in our dataset. Let $v_i = \frac{1}{\phi(\Phi^{-1}(\hat{p_i}))^2} \frac{\hat{p_i}(1-\hat{p_i})}{n_i}$ denote the estimate of $Var(\Phi^{-1}(\hat{p_i}))$.
 
 Let $S = \Phi^{-1}(\hat{p_2}) - 2\Phi^{-1}(\hat{p_1}) + \Phi^{-1}(\hat{p_0})$, and $T = \frac{S^2}{v_o+4v_1+v_2}$ be our test statistic. If 1 is the true model, then $T \sim X^2_{1}$.
@@ -138,14 +138,14 @@ where $\phi$ denotes the density of a standard normal.
 Let $W_{ij} = \Phi^{-1}(\hat{p_{ij}})$. The variance of $W_{ij}$ can be estimated as $v_{ij} = \frac{1}{\phi(\Phi^{-1}(\hat{p_{ij}}))^2}\frac{\hat{p_{ij}}(1-\hat{p_{ij}})}{n_{ij}}$, which is simply plugging $\hat{p_{ij}}$ for the unknown true probability $p_{ij}$. Let $S_1 = a_0(W_{10}-W_{00}) + a_1(W_{11}-W_{01}) + a_2(W_{12}-W_{02})$ and $S_2 = a_0(W_{20}-W_{10}) + a_1(W_{21}-W_{11}) + a_2(W_{22}-W_{12})$, where $a_i$ is weight given to each difference term, such that $\sum_{i=0}^2 a_i =0$. If the frequency of $G$ or $Z$ is known. Then $a_i = P(Z =i)$ when we are testing for the interaction of $G$ with $E$. So $S_1$ and $S_2$ will have a nice interpretation being estimated expected effect of $G$.
 
 Under the null hypothesis that $\beta_{G\times E} =0$ which means no interaction between $G$ and $E$, we know that $\Phi^{-1}(p_{ij})$ should be linear in i. That is: $W_{(i+1)j} - W_{ij} \sim N(b_i,v_{(i+1)j} + v_{ij})$ for all j = 0,1,2. So: 
-$$S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg) $$
+$$S_1 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{1i}+v_{0i})\bigg)$$
 
-$$S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg) $$
+$$S_2 \sim N\bigg(\sum_{i=0}^{2}a_ib_i,\sum_{i=0}^{2}a_i^2(v_{2i}+v_{1i})\bigg)$$
 
 with the covariance between $S_1$ and $S_2$ be denoted as C, which can be computed as:
 $$ C = \text{Cov}(S_1,S_2) = -\sum_{i=0}^{2}v_{1i}a_i^2 $$
 
-That means, if the null hypothesis is true, $$ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}$$. We will reject the null hypothesis when $T$ has a large value.
+That means, if the null hypothesis is true, $$ T = \frac{(S_1-S_2)^2}{\sigma_{S_1}^2+\sigma_{S_2}^2 -2C} \sim X^2_{df=1}$$ We will reject the null hypothesis when $T$ has a large value.
 
 
 \textbf{Question to study:} If $G$ and $Z$ are uncorrelated, we can just ignore the $Z$ variable and use the test statistic in the first case. Which way will be better?
@@ -181,11 +181,11 @@ This is a weighted least square with weight matrix $\Omega$ capturing the hetero
 The above relationship can be generalized using the idea of a two stage regression. In the first stage, we consider the following generalized linear regression:
 $$ E(Y_i|G_i) = \Phi\bigg(\beta_0+ \beta_1 \text{I}(G_i =1) + \beta_2 \text{I}(G_i =2)\bigg)$$
 
-From this generlized linear regression, we obtained the fitted linear predictors $\hat{\eta_i} = \hat{\beta_0}+\hat{\beta_1}\text{I}(G_i =1) + \hat{\beta_2} \text{I}(G_i =2)$. Then, we fit the following weighted least square regression in the second stage:
+From this generalized linear regression, we obtained the fitted linear predictors $\hat{\eta_i} = \hat{\beta_0}+\hat{\beta_1}\text{I}(G_i =1) + \hat{\beta_2} \text{I}(G_i =2)$. Then, we fit the following weighted least square regression in the second stage:
 $$ \hat{\eta_i} = \gamma_0 +\gamma_1  \text{I}(G_i =1) + \gamma_2 \text{I}(G_i =2) +\epsilon_i$$
 where $\epsilon_i \sim N\bigg(0,\frac{\Phi(\hat{\eta_i})(1-\Phi(\hat{\eta_i}))}{\phi(\hat{\eta_i})^2} \bigg)$. Define the weight matrix $W = \text{diag}\{\frac{\Phi(\hat{\eta_i})(1-\Phi(\hat{\eta_i}))}{\phi(\hat{\eta_i})^2}\}$, then our previous test statistic is just the test statistic of Wald test of $H_0:\gamma_2 = 2\gamma_1$.
 
-The intuition behind how this approach works to detect the interaction between $G$ and $E$ can be thought as following. In the first regression, we are actually trying to get an estimate of $\eta = \frac{\text{E}(Y^*|G)}{\sqrt{\text{Var}(Y^*|G)}}$. Recall from the first section, if there is interaction between $G$ and $E$, then $\eta$ will be non-linear in $G$ due to the fact that $ \text{Var}(Y^*|G)\}$ will be non-constant (We cannot directly test on whether $Y^*$ has constant variance because it is not estimatable). Therefore, if we observe that $\hat{\eta}$ is linear in $G$, which means $\gamma_2 = \gamma_1$, then we can be reasonable confirmative that there is no interaction present in the model.
+The intuition behind how this approach works to detect the interaction between $G$ and $E$ can be thought as following. In the first regression, we are actually trying to get an estimate of $\eta = \frac{\text{E}(Y^*|G)}{\sqrt{\text{Var}(Y^*|G)}}$. Recall from the first section, if there is interaction between $G$ and $E$, then $\eta$ will be non-linear in $G$ due to the fact that $\text{Var}(Y^*|G)$ will be non-constant (We cannot directly test on whether $Y^*$ has constant variance because it is not estimable). Therefore, if we observe that $\hat{\eta}$ is linear in $G$, which means $\gamma_2 = \gamma_1$, then we can be reasonable confident that there is no interaction present in the model.
 
 We can use the first stage regression to obtain accurate estimate of $\eta$ because regardless whether $\eta$ is linear in G, we know $\eta$ can be written as a linear model with $\text{I}(G_i =1)$ and $\text{I}(G_i =2)$. This suggests, if we have another covariate $Z$ in the model, we can just do the two stage regressions with all of $\text{I}(G_i =j)$ and $\text{I}(G_i =j)Z_i$ (Then in our null hypothesis, besides that $\gamma_2 = 2 \gamma_1$, we can also add additional constraints that all of $\text{I}(G_i =j)Z_i$ should have the same slopes to increase our power).
 
@@ -198,11 +198,11 @@ We can use the first stage regression to obtain accurate estimate of $\eta$ beca
 
 Suppose that we have the following true latent model:
 $$ Y_i ^{*} = \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_E E_i + \beta_{G\times E}G_i \times E_i + \epsilon_i $$. Then like we have derived in the previous section, we know that:
-$$Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i,  \big(\beta_{G\times E} G_i\big)^2 \sigma_E^2 + 1\bigg)$$, 
+$$Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i,  \big(\beta_{G\times E} G_i\big)^2 \sigma_E^2 + 1\bigg)$$ 
 Assume without loss of generality that $E$ has been standardized to $\text{N}(0,1)$, and define $\gamma =  \beta_{G\times E}^2$, then the above model can be simplified into:
-$$Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + \beta_GG_i + \beta_ZZ_i,\ \gamma G^2 + 1\bigg)$$.
+$$Y_i^*|G_i, Z_i \sim \text{N}\bigg(\beta_0 + \beta_GG_i + \beta_ZZ_i,\ \gamma G^2 + 1\bigg)$$
 
-This model is identifiable, and we can fit it using maximum likelihood estimation (Actually there is a Rpackage that can fit $Y^*$ with variance $\text{exp}(\gamma G)$, called heteroskedastic probit model in econometrics. However, for our proposed model, it seems like we do need to write a Rfunction by ourselves to get the MLE). We can do joint testing of interaction effect by testing $H_0: \gamma = 0$, using likelihood ratio test. Since $\gamma \geq 0$, we do need to do a correction for boundary so our LRT test statistic follows $X^2_{0}/2 +X^2_{1}/2$ under null hypothesis.
+This model is identifiable, and we can fit it using maximum likelihood estimation (Actually there is a R package that can fit $Y^*$ with variance $\text{exp}(\gamma G)$, called heteroskedastic probit model in econometric. However, for our proposed model, it seems like we do need to write a R function by ourselves to get the MLE). We can do joint testing of interaction effect by testing $H_0: \gamma = 0$, using likelihood ratio test. Since $\gamma \geq 0$, we do need to do a correction for boundary so our LRT test statistic follows $X^2_{0}/2 +X^2_{1}/2$ under null hypothesis.
 
 If we want to jointly test $H_0: \gamma = 0 \ \text{and} \ \beta_G =0$, we can use a similar LRT procedure with null distribution being $X^2_{1}/2 +X^2_{2}/2$.
 
