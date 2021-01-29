@@ -25,28 +25,49 @@ library(qqman)
 # The Underlying Model:
 
 
-For binary response variable, it is often assumed that the response variable $y_i$ conditioning on the regressors $G_i,Z_i$ come from a latent model such that:
+For binary response variable, it is often assumed that the response variable $y$ conditioning on the regressors $G,Z$ come from a latent model such that:
 \begin{equation}\label{eqn:latentformulation}
 \begin{aligned}
-Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \epsilon_i \\
-Y_i &= I\{Y_i^*>0\} \\
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
 \end{aligned}
 \end{equation}
 
-The unobserved latent variable $Y_i^*$ determines whether the observed response variable $Y_i$ is 0 or 1. The error term $\epsilon_i$ in $Y_i^*$ needs to have a completely known distribution, which can be $\text{N}(0,1)$ for the model of $Y|G,Z$ to become a probit model, or a logistic distribution with mean 0 and variance 3.28 for the model to become a logistic regression model. 
+The unobserved latent variable $Y^*$ determines whether the observed response variable $Y$ is 0 or 1. The error term $\epsilon$ in $Y^*$ needs to have a completely known distribution, which can be $\text{N}(0,1)$ for the model of $Y|G,Z$ to become a probit model, or a logistic distribution with mean 0 and variance 3.28 for the model of $Y|G,Z$ to become a logistic regression model. 
 
-Here the regressor $G_i$ represents the allele of interest, and the regressor $Z_i$ is any regressor that can be non-genetic. For now on, we will assume the model is probit for simplicity, unless otherwise indicated.
+Here the regressor $G$ represents the allele of interest, and the regressor $Z$ is any regressor that can be non-genetic. For now on, we will assume the model is probit for simplicity, unless otherwise indicated. For probit regression model, we can express $\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg)$ as:
+\begin{equation}\label{eqn:probitModelLinearity}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 + \beta_G G + \beta_Z Z \\
+\end{aligned}
+\end{equation}
+Where $\Phi(.)$ denote the CDF function of standard normal distribution.
+
+
+
+
 
 
 Similarly, we can have a Genotypic Model defined as:  
 \begin{equation}\label{eqn:latentformulationGeno}
 \begin{aligned}
-Y_i^* &= \beta_0 + \beta_{G1} I(G_i = 1) + \beta_{G2} I(G_i = 2) + \beta_Z Z_i + \epsilon_i \\
-Y_i &= I\{Y_i^*>0\} \\
+Y^* &= \beta_0 + \beta_{G1} I(G = 1) + \beta_{G2} I(G = 2) + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\end{aligned}
+\end{equation}
+
+Therefore, the regression model can be written as:
+\begin{equation}\label{eqn:probitModelLinearity2}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 +\beta_{G1} I(G = 1) + +\beta_{G2} I(G = 2) + \beta_Z Z \\
 \end{aligned}
 \end{equation}
 
 The Genotypic Model has higher degree of freedom than the additive model due to the extra regression parameter.
+
+It can be noticed that the variance parameter of $\epsilon$ is fixed to a specific constant to avoid the problem of identifiability, since we cannot identify both $\beta$ and $\text{Var}(\epsilon)$ in $\frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}$.
 
 
 
@@ -55,38 +76,38 @@ The Genotypic Model has higher degree of freedom than the additive model due to 
 Assume for simplicity that $E_i$ the environmental variable has a normal distribution with mean $\mu_E$ and variance $\sigma_E^2$, and suppose that the true underlying model is:
 \begin{equation}\label{eqn:probitModelWithInteraction}
 \begin{aligned}
-Y_i^* &= \beta_0 + \beta_G G_i + \beta_Z Z_i + \beta_E E_i + \beta_{G\times E} G_i \times E_i + \epsilon_i \\
-Y_i &= I\{Y_i^*>0\} \\
-\epsilon_i &\sim \text{N}(0,1)
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \beta_E E + \beta_{G\times E} G \times E + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\epsilon &\sim \text{N}(0,1)
 \end{aligned}
 \end{equation}
 
 Furthermore, we can compute that:
 \begin{equation}\label{eqn:probitModelWithInteraction_MeanVar}
 \begin{aligned}
-\text{E}(Y_i^*|G_i,Z_i) &= \beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i \\
-\text{Var}(Y_i^*|G_i,Z_i) &= (\beta_{G\times E} G_i)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \\
-Y_i^*|G_i, Z_i &\sim \text{N}\bigg(\beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z_i, (\beta_{G\times E} G_i)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \bigg)
+\text{E}(Y^*|G,Z) &= \beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z \\
+\text{Var}(Y^*|G,Z) &= (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \\
+Y^*|G, Z &\sim \text{N}\bigg(\beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z, (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \bigg)
 \end{aligned}
 \end{equation}
 
-That implies that the probability we get a case for different levels of $G_i$ and $Z_i$ will be:
+That implies that the probability we get a case for different levels of $G$ and $Z$ will be:
 \begin{equation}\label{eqn:probitModelWithInteraction_Prob} 
 \begin{aligned} 
-\text{P}(Y = 1 | G_i, Z_i) &= \text{P}(Y^* > 0| G_i, Z_i) \\ 
-                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G_i,Z_i)}{\sqrt{\text{Var}(Y^* |G_i,Z_i)}} > \frac{-\text{E}(Y^* |G_i,Z_i)}{\sqrt{\text{Var}(Y^* |G_i,Z_i)}}) \\
-                           &= \Phi \bigg( \frac{\text{E}(Y^* |G_i,Z_i)}{\sqrt{\text{Var}(Y^* |G_i,Z_i)}} \bigg)
+\text{P}(Y = 1 | G, Z) &= \text{P}(Y^* > 0| G, Z) \\ 
+                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} > \frac{-\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}) \\
+                           &= \Phi \bigg( \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \bigg)
 \end{aligned}
 \end{equation}
 
 
-Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G_i + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G_i^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$ 
+Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$ 
 
-This is only a linear function of $G_i$ when the interaction parameter $\beta_{G\times E} = 0$, and the slope of Z is constant across different genes only when $\beta_{G\times E}$ is zero.
+This is only a linear function of $G$ when the interaction parameter $\beta_{G\times E} = 0$, and the slope of Z is constant across different genes only when $\beta_{G\times E}$ is zero.
 
 \begin{enumerate}
-\item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then even though ignoring that regressor breaks the structural assumption of probit model, so that the fitted model without $W$ is no longer a probit model (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y_i = 1|G_i,Z_i))$ will still be a linear function of $G_i$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
-\item Since $P(Y_i = 1|G_i,Z_i)$ is actually unknown in practice, we can estimate it using the sample proportion $\hat{P}(Y = 1|G = g,Z = z) = \frac{\sum_{i=1}^{n} \text{I}\{y_i =1,G_{i} = g, Z_{i} = z\}}{\sum_{i=1}^{n}  \text{I}\{G_{i} = g, Z_{i} = z\}}$. We shouldn't use the fitted model to estimate them since our fitted model may be wrong.
+\item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then even though ignoring that regressor scales all the regression parameters by an unknown constant (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y = 1|G,Z))$ will still be a linear function of $G$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
+\item Even though $\Phi^{-1}\text{P}$ is not linear in G as shown above, this model can still be rewritten as a valid genotypic probit regression model by regressing on $I(G=1)$ and $I(G=2)$. The genotypic model in this case will have six regression parameters in this case (two for effects of G, three for slopes of Z, and one intercept).
 \item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, logistic regression model for $Y|G,Z$ implies that $Y^*|G,Z$ must follow logistic distribution. In other words, probit regression model with omitted covariate will still be a probit regression model, just with different regression parameters. Based on the literature, it seems like probit model and logistic model have really closed results in real applications.
 \end{enumerate}
 
@@ -111,13 +132,13 @@ In this case, the model will still be linear in $I(G = 1), I(G = 2)$ because of 
 
 # Method for Additive Model:
 
-In this section, I will present two methods for the detection of interaction effect when the true model is additive.
+In this section, I will present a method for the detection of interaction effect when the true model is additive.
 
 ## Testing of Linearity:
 Recall that when the model is additive, then: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}}$$ 
 
 
-This method relies on the checking of linearity of $\Phi^{-1}(P)$, so the test statistics will also be focusing on the detection of linearity. Note that the above 1 degree of freedom regression model, although it is not linear in $G$, it can be rewritten as a valid 2 degree of freedom genotypic model that is linear in $I(G=1), I(G=2)$:
+This method relies on checking linearity of $\Phi^{-1}(P)$, so the test statistics will also focus on the detection of potential deviation from linearity (or additivity). Note that the above 1 degree of freedom regression model, although it is not linear in $G$, it can be rewritten as a valid 2 degree of freedom genotypic model that is linear in $I(G=1), I(G=2)$:
 
 \begin{equation}
 \begin{aligned}
@@ -135,7 +156,7 @@ Here, we can compute that:
 \end{aligned}
 \end{equation}
 
-Therefore, we can conclude that if $\beta_{G\times E} = 0$, then $\beta_G =\gamma_1 = 2\gamma_2$ must hold. If we further have the information on the covariate $Z$, then we can increase the power of our detection by also testing on $\gamma_{Z1G} = \gamma_{Z2G} =0$ (equal slopes of Z across genotypes).
+Therefore, we can conclude that if $\beta_{G\times E} = 0$, then $\beta_G =2\gamma_1 = \gamma_2$ must hold. If we further have the information on the covariate $Z$, then we can increase the power of our detection by also testing on $\gamma_{Z1G} = \gamma_{Z2G} =0$ (equal slopes of Z across genotypes).
 
 
 ### Wald Test Statistics:
@@ -145,12 +166,12 @@ To test the null hypothesis of $\beta_{G\times E} = 0$, we can use the following
 \textbf{1. Rewrite the additive regression model:}
 We first rewrite the additive regression model as a genotypic model, i.e: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G=2) + \gamma_{Z1G} I(G=1) * Z + \gamma_{Z2G} I(G=2) * Z + \gamma_Z Z$$
 
-Now, the regression parameters in this model may not carry very meaningful interpretations due to the potential presence of $\beta_{G\times E}$. However, we can use them to detect the presence of missing interaction effect by either testing $H_0: \gamma_1 = \gamma_2$ or $H_0: \gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, depending on whether the information of $Z$ is available, and whether $Z$ is ordinal.
+Now, the regression parameters in this model may not carry very meaningful interpretations due to the potential presence of $\beta_{G\times E}$. However, we can use them to detect the presence of missing interaction effect by either testing $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, depending on whether the information of $Z$ is available, and whether $Z$ is ordinal.
 
 \textbf{2. Wald Test on linearity:}
-To test $H_0: \gamma_1 = \gamma_2$ or $H_0: \gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, we can simply do a Wald test on the genotypic working model that we considered above. It turns out that this Wald test statistic $T$ can also be equivalently derived through an application of Delta method on sample proportion, or as a two-stage linear regression. 
+To test $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, we can simply do a Wald test on the genotypic working model that we considered above. It turns out that this Wald test statistic $T$ can also be equivalently derived through an application of Delta method on sample proportion, or as a two-stage linear regression. 
 
-If we have information about the covariate $Z$ in the regression model, and $Z$ is an ordinal variable with additive effect, then the power of our test will be augmented if we test $H_0: \gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$ in our Wald test. We can also only test $H_0: \gamma_{Z1G}=\gamma_{Z2G} =0$, this makes our test robust to the case that G's effect is actually non-additive. However, we then need to be more careful to make sure that $Z$ indeed has no interaction with G or E in the \textbf{true} model. 
+If we have information about the covariate $Z$ in the regression model, and $Z$ is an ordinal variable with additive effect, then the power of our test will be augmented if we test $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$ in our Wald test. We can also only test $H_0: \gamma_{Z1G}=\gamma_{Z2G} =0$, this makes our test robust to the case that G's effect is actually non-additive. However, we then need to be more careful to make sure that $Z$ indeed has no interaction with G or E in the \textbf{true} model. 
 
 
 

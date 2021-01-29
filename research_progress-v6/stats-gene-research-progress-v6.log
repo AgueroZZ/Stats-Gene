@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/W32TeX) (preloaded format=pdflatex 2021.1.11)  28 JAN 2021 23:58
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/W32TeX) (preloaded format=pdflatex 2021.1.11)  29 JAN 2021 10:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -539,82 +539,82 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <5> on input line 115.
 
-Underfull \hbox (badness 10000) in paragraph at lines 135--136
+Underfull \hbox (badness 10000) in paragraph at lines 143--144
 
  []
 
 [1
 
 {c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdfte
-x.map}] [2] [3
+x.map}] [2] [3] [4
 
-] [4]
+] [5]
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 3
-55.
+78.
 (c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 358.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 381.
 <stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-1.pdf, id=9
-1, 469.755pt x 325.215pt>
+6, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-1.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-1.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-2-1.pdf  used on input line 413.
+amed-chunk-2-1.pdf  used on input line 436.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[5]
-<stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf, id=9
-9, 469.755pt x 325.215pt>
+[6]
+<stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf, id=1
+04, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-2-2.pdf  used on input line 421.
+amed-chunk-2-2.pdf  used on input line 444.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[6 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-1.pdf>
+[7 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-1.pdf>
 ]
 <stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-3.pdf, id=1
-11, 469.755pt x 325.215pt>
+17, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-3.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-3.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-2-3.pdf  used on input line 431.
+amed-chunk-2-3.pdf  used on input line 454.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[7 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf>
-] [8 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-3.pd
+[8 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-2.pdf>
+] [9 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-2-3.pd
 f>]
 <stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-1.pdf, id=1
-34, 469.755pt x 325.215pt>
+39, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-1.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-1.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-3-1.pdf  used on input line 472.
+amed-chunk-3-1.pdf  used on input line 495.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
 <stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-2.pdf, id=1
-35, 469.755pt x 325.215pt>
+40, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-2.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-2.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-3-2.pdf  used on input line 481.
+amed-chunk-3-2.pdf  used on input line 504.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[9
+[10
 
  <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-1.pdf>]
 <stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-3.pdf, id=1
-47, 469.755pt x 325.215pt>
+53, 469.755pt x 325.215pt>
 File: stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-3.pdf 
 Graphic file (type pdf)
 <use stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-3.pdf>
 Package pdftex.def Info: stats-gene-research-progress-v6_files/figure-latex/unn
-amed-chunk-3-3.pdf  used on input line 490.
+amed-chunk-3-3.pdf  used on input line 513.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[10 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-2.pdf
->] [11 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-3.
+[11 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-2.pdf
+>] [12 <./stats-gene-research-progress-v6_files/figure-latex/unnamed-chunk-3-3.
 pdf>] (./stats-gene-research-progress-v6.aux)
 
 LaTeX Warning: There were multiply-defined labels.
@@ -624,41 +624,40 @@ Package rerunfilecheck Info: File `stats-gene-research-progress-v6.out' has not
 (rerunfilecheck)             Checksum: 7513F6F137369AC009F7961D374FF26A;1769.
  ) 
 Here is how much of TeX's memory you used:
- 11003 strings out of 481252
- 161726 string characters out of 5914123
- 459554 words of memory out of 5000000
- 27711 multiletter control sequences out of 15000+600000
+ 11008 strings out of 481252
+ 161812 string characters out of 5914123
+ 460650 words of memory out of 5000000
+ 27713 multiletter control sequences out of 15000+600000
  455644 words of font info for 70 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  71i,11n,74p,831b,347s stack positions out of 5000i,500n,10000p,200000b,80000s
 {c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.e
-nc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.
-enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ma
-thit.enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/
-lm-mathex.enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvip
-s/lm/lm-mathsy.enc}<c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/typ
+nc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mat
+hsy.enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/l
+m-mathex.enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips
+/lm/lm-mathit.enc}{c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/
+dvips/lm/lm-rm.enc}<c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/typ
 e1/public/lm/lmbx10.pfb><c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/font
 s/type1/public/lm/lmbx12.pfb><c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist
 /fonts/type1/public/lm/lmex10.pfb><c:/Users/aguer/AppData/Roaming/TinyTeX/texmf
 -dist/fonts/type1/public/lm/lmmi10.pfb><c:/Users/aguer/AppData/Roaming/TinyTeX/
-texmf-dist/fonts/type1/public/lm/lmmi5.pfb><c:/Users/aguer/AppData/Roaming/Tiny
-TeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/Users/aguer/AppData/Roaming/
-TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/aguer/AppData/Roam
-ing/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/aguer/AppData/
-Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/aguer/AppD
-ata/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb><c:/Users/aguer/A
-ppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/ague
-r/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users
-/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb><c:/U
-sers/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb>
-<c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10
-.pfb><c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/l
-mtti10.pfb>
-Output written on stats-gene-research-progress-v6.pdf (11 pages, 23941870 bytes
+texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/Users/aguer/AppData/Roaming/Tiny
+TeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/aguer/AppData/Roaming/
+TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/aguer/AppData/Roam
+ing/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/aguer/AppData/
+Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/aguer/AppDa
+ta/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users/aguer/
+AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy5.pfb><c:/Users/ag
+uer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb><c:/User
+s/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:
+/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pf
+b><c:/Users/aguer/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt
+i10.pfb>
+Output written on stats-gene-research-progress-v6.pdf (12 pages, 23928276 bytes
 ).
 PDF statistics:
- 241 PDF objects out of 1000 (max. 8388607)
- 198 compressed objects within 2 object streams
- 43 named destinations out of 1000 (max. 500000)
+ 243 PDF objects out of 1000 (max. 8388607)
+ 200 compressed objects within 2 object streams
+ 46 named destinations out of 1000 (max. 500000)
  95 words of extra memory for PDF output out of 10000 (max. 10000000)
 
