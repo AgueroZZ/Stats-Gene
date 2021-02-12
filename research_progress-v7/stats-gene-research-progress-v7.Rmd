@@ -1,0 +1,663 @@
+
+---
+title: "Progress report: Detecting interaction with unknown environmental covariate"
+author: "Ziang Zhang"
+date: "15/10/2020"
+output: 
+  pdf_document:
+    keep_tex: true
+    number_sections: true
+    fig_caption: yes
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lme4)
+library(bigsnpr)
+library(bigstatsr)
+library(dplyr)
+library(nlme)
+library(aod)
+library(qqman)
+library(foreach)
+library(doParallel)
+```
+
+# The Underlying Model:
+
+For binary response variable, it is often assumed that the response variable $y$ conditioning on the regressors $G,Z$ come from a latent model such that:
+\begin{equation}\label{eqn:latentformulation}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\end{aligned}
+\end{equation}
+
+The unobserved latent variable $Y^*$ determines whether the observed response variable $Y$ is 0 or 1. The error term $\epsilon$ in $Y^*$ needs to have a completely known distribution, which can be $\text{N}(0,1)$ for the model of $Y|G,Z$ to become a probit model, or a logistic distribution with mean 0 and variance 3.28 for the model of $Y|G,Z$ to become a logistic regression model. 
+
+Here the regressor $G$ represents the allele of interest, and the regressor $Z$ is any regressor that can be non-genetic. For now on, we will assume the model is probit for simplicity, unless otherwise indicated. For probit regression model, we can express $\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg)$ as:
+\begin{equation}\label{eqn:probitModelLinearity}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 + \beta_G G + \beta_Z Z \\
+\end{aligned}
+\end{equation}
+Where $\Phi(.)$ denote the CDF function of standard normal distribution.
+
+
+
+
+
+
+Similarly, we can have a Genotypic Model defined as:  
+\begin{equation}\label{eqn:latentformulationGeno}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_{G1} I(G = 1) + \beta_{G2} I(G = 2) + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\end{aligned}
+\end{equation}
+
+Therefore, the regression model can be written as:
+\begin{equation}\label{eqn:probitModelLinearity2}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 +\beta_{G1} I(G = 1) + +\beta_{G2} I(G = 2) + \beta_Z Z \\
+\end{aligned}
+\end{equation}
+
+The Genotypic Model has higher degree of freedom than the additive model due to the extra regression parameter.
+
+It can be noticed that the variance parameter of $\epsilon$ is fixed to a specific constant to avoid the problem of identifiability, since we cannot identify both $\beta$ and $\text{Var}(\epsilon)$ in $\frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}$.
+
+
+
+## When the true model does contain gene-environment interaction
+
+Assume for simplicity that $E_i$ the environmental variable has a normal distribution with mean $\mu_E$ and variance $\sigma_E^2$, and suppose that the true underlying model is:
+\begin{equation}\label{eqn:probitModelWithInteraction}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \beta_E E + \beta_{G\times E} G \times E + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\epsilon &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Furthermore, we can compute that:
+\begin{equation}\label{eqn:probitModelWithInteraction_MeanVar}
+\begin{aligned}
+\text{E}(Y^*|G,Z) &= \beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z \\
+\text{Var}(Y^*|G,Z) &= (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \\
+Y^*|G, Z &\sim \text{N}\bigg(\beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z, (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \bigg)
+\end{aligned}
+\end{equation}
+
+That implies that the probability we get a case for different levels of $G$ and $Z$ will be:
+\begin{equation}\label{eqn:probitModelWithInteraction_Prob} 
+\begin{aligned} 
+\text{P}(Y = 1 | G, Z) &= \text{P}(Y^* > 0| G, Z) \\ 
+                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} > \frac{-\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}) \\
+                           &= \Phi \bigg( \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \bigg)
+\end{aligned}
+\end{equation}
+
+
+Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$ 
+
+This is only a linear function of $G$ when the interaction parameter $\beta_{G\times E} = 0$, and the slope of Z is constant across different genes only when $\beta_{G\times E}$ is zero.
+
+\begin{enumerate}
+\item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then even though ignoring that regressor scales all the regression parameters by an unknown constant (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y = 1|G,Z))$ will still be a linear function of $G$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
+\item Even though $\Phi^{-1}\text{P}$ is not linear in G as shown above, this model can still be rewritten as a valid genotypic probit regression model by regressing on $I(G=1)$ and $I(G=2)$. The genotypic model in this case will have six regression parameters in this case (two for effects of G, three for slopes of Z, and one intercept).
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, logistic regression model for $Y|G,Z$ implies that $Y^*|G,Z$ must follow logistic distribution. In other words, probit regression model with omitted covariate will still be a probit regression model, just with different regression parameters. Based on the literature, it seems like probit model and logistic model have really closed results in real applications.
+\end{enumerate}
+
+
+
+
+If the model is Genotypic instead:
+\begin{equation}\label{eqn:genointer}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_{G1} I(G_i = 1) + \beta_{G2} I(G_i = 2) + \beta_Z Z_i + \beta_E E_i + \beta_{G1E} I(G_i = 1) \times E_i + \beta_{G2E} I(G_i = 2) \times E_i  + \epsilon_i \\
+\end{aligned}
+\end{equation}
+
+then we can derive the following:
+$$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_{G1} + \beta_{G1E} \mu_E)I(G = 1)+(\beta_{G2} + \beta_{G2E} \mu_E)I(G = 2) + \beta_Z Z}{\sqrt{(\beta_{G1E}^2 I(G = 1) \sigma_E^2 +\beta_{G2E}^2 I(G = 2) \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$
+In this case, the model will still be linear in $I(G = 1), I(G = 2)$ because of the extra parameter, just with different regression parameters. But the slope of Z will continue to differ between different Genetic types unless the there are no interaction effects $\beta_{G1E}$ and $\beta_{G2E}$.
+
+
+
+
+
+# Compare with the traditional method for normal data:
+
+When the response variable $Y$ is normally distributed, the traditional method to test for potential GxE interaction is based on the test of heteroskedasticity of $Y$ for different genotypes. The idea is that if:
+$$ Y = \beta_0 + \beta_1G + \gamma_1 G\times E+ \epsilon, \ \text{where} \ \epsilon\sim N(0,\sigma^2) $$
+then we can see that $Var(Y|G) = \gamma_1^2G^2Var(E)+\epsilon$ if we assume that $E$ is uncorrelated with $G$. In other words, the conditional variance of $Y$ is a quadratic function of $G$.
+
+
+If the response data is binary, and we assume that the true underlying model is a probit model as in the previous section, then the situation for the latent variable $Y^*$ is basically the same, except that our $\epsilon$ follows a specific standard normal distribution. It would suffice if we can detect the heteroskedasticity of our latent variable $Y^*$, but unlike the case of normal data, these normally distributed $Y^*$ are not directly observable. For binary data, the only observable quantities related to $Y^*$ is the binary variable $Y = I(Y^*>0)$.
+
+
+Therefore, as described in the previous section, since $Y|G \sim Ber(p=\Phi\big(\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big))$, the conditional variance of $Y^*$ is not identifiable from the data. However, this ratio of $\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}$ can still be identified, and the numerator is always a linear function of $G$ regardless of whether there is GxE interaction. 
+
+
+It worth notice that we cannot use infer the GxE interaction from $Var(Y|G)$ if $Y$ is binary data, since unlike normal variable, Bernoulli variable's variance is directly specified through their means. In this case, each $Y$ will be Bernoulli variable with fixed variance being $\Phi\big(\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big)\Phi\big(-\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big)$. This also implies that we cannot identify any overdispersion parameter if we are using individual-level probit model.
+
+
+If we choose to work with the group-level data (i.e. binomial data for number of cases of each genotype), then we can estimate the overdispersion parameter. However, that overdispersion parameter quantifies how individuals in the dataset are correlated (i.e. how is the distribution of number of cases of each genotype different from a binomial distribution), which will not be our primary interest here.
+
+
+\clearpage
+
+
+
+
+
+
+
+# Method for Additive Model:
+
+In this section, I will present a method for the detection of interaction effect when the true model is additive.
+
+## Testing of Linearity:
+Recall that when the model is additive, then: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}}$$ 
+
+
+This method relies on checking linearity of $\Phi^{-1}(P)$, so the test statistics will also focus on the detection of potential deviation from linearity (or additivity). Note that the above 1 degree of freedom regression model, although it is not linear in $G$, it can be rewritten as a valid 2 degree of freedom genotypic model that is linear in $I(G=1), I(G=2)$:
+
+\begin{equation}
+\begin{aligned}
+\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) &= \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} \\
+                                              &= \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G=2) + \gamma_{Z1G} I(G=1) * Z + \gamma_{Z2G} I(G=2) * Z + \gamma_Z Z 
+\end{aligned}
+\end{equation}
+
+Here, we can compute that:
+\begin{equation}
+\begin{aligned}
+& \gamma_0 = \frac{\beta_0 + \beta_E \mu_E}{\sqrt{\beta_E^2 \sigma_E^2 + 1}} \\
+& \gamma_1 = \frac{\beta_0 + \beta_E \mu_E + \beta_G + \beta_{G\times E} \mu_E}{\sqrt{\beta_{G\times E}^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1}} - \gamma_0 \\
+& \gamma_2 = \frac{\beta_0 + \beta_E \mu_E + 2(\beta_G + \beta_{G\times E} \mu_E)}{\sqrt{4\beta_{G\times E}^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1}} - \gamma_0
+\end{aligned}
+\end{equation}
+
+Therefore, we can conclude that if $\beta_{G\times E} = 0$, then $\beta_G =2\gamma_1 = \gamma_2$ must hold. If we further have the information on the covariate $Z$, then we can increase the power of our detection by also testing on $\gamma_{Z1G} = \gamma_{Z2G} =0$ (equal slopes of Z across genotypes).
+
+
+### Wald Test Statistics:
+
+To test the null hypothesis of $\beta_{G\times E} = 0$, we can use the following steps:
+
+\textbf{1. Rewrite the additive regression model:}
+We first rewrite the additive regression model as a genotypic model, i.e: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G=2) + \gamma_{Z1G} I(G=1) * Z + \gamma_{Z2G} I(G=2) * Z + \gamma_Z Z$$
+
+Now, the regression parameters in this model may not carry very meaningful interpretations due to the potential presence of $\beta_{G\times E}$. However, we can use them to detect the presence of missing interaction effect by either testing $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, depending on whether the information of $Z$ is available, and whether $Z$ is ordinal.
+
+\textbf{2. Wald Test on linearity:}
+To test $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, we can simply do a Wald test on the genotypic working model that we considered above. It turns out that this Wald test statistic $T$ can also be equivalently derived through an application of Delta method on sample proportion, or as a two-stage linear regression. 
+
+If we have information about the covariate $Z$ in the regression model, and $Z$ is an ordinal variable with additive effect, then the power of our test will be augmented if we test $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$ in our Wald test. We can also only test $H_0: \gamma_{Z1G}=\gamma_{Z2G} =0$, this makes our test robust to the case that G's effect is actually non-additive. However, we then need to be more careful to make sure that $Z$ indeed has no interaction with G or E in the \textbf{true} model. 
+
+
+
+
+
+
+
+
+
+
+
+# Method for Genotypic Model:
+
+
+## Auxiliary variable method:
+
+Recall for a Genotypic Model with interaction like below: 
+\begin{equation}\label{eqn:genointer}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_{G1} I(G_i = 1) + \beta_{G2} I(G_i = 2) + \beta_Z Z_i + \beta_E E_i + \beta_{G1E} I(G_i = 1) \times E_i + \beta_{G2E} I(G_i = 2) \times E_i  + \epsilon_i \\
+\end{aligned}
+\end{equation}
+
+
+We can derive that:
+\begin{equation}\label{eqn:RStest}
+\begin{aligned}
+\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) &= \frac{\beta_0+\beta_E \mu_E+(\beta_{G1} + \beta_{G1E} \mu_E)I(G = 1)+(\beta_{G2} + \beta_{G2E} \mu_E)I(G = 2) + \beta_Z Z}{\sqrt{(\beta_{G1E}^2 I(G = 1) \sigma_E^2 +\beta_{G2E}^2 I(G = 2) \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} \\
+&= \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G = 2) + \gamma_Z Z + \gamma_{Z1G} I(G = 1) \times Z + \gamma_{Z2G} I(G = 2) \times Z
+\end{aligned}
+\end{equation}
+
+where the new parameters $\gamma_{Z1G}$ and $\gamma_{Z2G}$ will be defined as:
+$$\gamma_{Z1G} = \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G1E}^2\sigma_E^2 +1}}-\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2 +1}} $$
+and:
+$$\gamma_{Z2G} = \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G2E}^2\sigma_E^2 +1}}-\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2 +1}} $$
+
+
+In other words, a Genotypic Model with an missing interaction can still be written as a linear function of these two indicator functions of G because of the extra regression parameter. However, ignoring this environment to gene interaction will create an artificial interaction between gene and the covariate Z. Since the interaction effects are zero if and only if the covariate Z has constant slopes across different genotypes, we can test the environmental interaction by testing the null hypothesis $H_0: \gamma_{Z1G} = \gamma_{Z2G} = 0$, using either wald test, likelihood ratio test or score test.
+
+The key in this method is to test the equal slopes of the auxiliary variable $Z$. In order for this method to work, we need the following assumption:
+
+\begin{enumerate}
+\item The auxiliary variable $Z_i$ is assumed to have no interaction effect with G in the model conditional on G, Z and E.
+\item The auxiliary variable $Z_i$ is also assumed to have no interaction effect with E in the model conditional on G, Z and E.
+\end{enumerate}
+
+
+\textbf{Main concern about genotypic model:} When we use the above method to test for the presence of GE interaction in a genotypic model, the power of our test is highly dependent on the true values for $\beta_Z$ and $\beta_{G\times E}$. Since $\gamma_{Z1G}$ and $\gamma_{Z2G}$ will eventually converge to $0$ as $\beta_Z$ gets closer to $0$, or as $\beta_{G\times E}$ gets closer to $0$. In other words, our method has very low power when: $$\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G1E}^2\sigma_E^2 +1}} \approx \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G2E}^2\sigma_E^2 +1}} \approx \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+1}}$$
+
+
+
+
+
+
+
+
+
+
+# GWAS Implementation on the 1000 Genome Project Data:
+
+## Simulation to check type I error rate:
+
+\textbf{Classical Testing for Main effect}
+
+
+In this section, we will conduct a GWAS on the 1kGP dataset. The cleaned set of data has 1736 independent individuals and around 2 millions SNPs. However, since our analysis will be more sensitive to the low genotypic frequency of each gene, we will further have some additional quality control to make sure the genotypic frequency is high enough for each category. We further filtered SNPs in this dataset with threshold on MAF being $0.15$, and keep only the SNPs on autosomes. After this additional QC procedure, there are 1749 individuals with 150652 SNPs in our dataset. 
+
+```{r}
+### Read in data:
+path <- "D:/gwas-practice/indep_QC.bed"
+tmpfile  <- tempfile()
+snp_readBed(path, backingfile = tmpfile)
+obj.bigSNP <- snp_attach(paste0(tmpfile , ".rds"))
+
+G   <- obj.bigSNP$genotypes
+CHR <- obj.bigSNP$map$chromosome
+POS <- obj.bigSNP$map$physical.pos
+
+# Check some counts for the 10 first SNPs
+big_counts(G, ind.col = 1:10)
+```
+We randomly assigned an individual to case or control, and assume the disease prevalence is 0.3. Firstly, we conduct the classical logistic regression to test the main effects. Because of the random assignment, the p-values should have similar behavior as $\text{Unif}[0,1]$. The results are summarized into histogram, QQ plot and Manhattan plot at below:
+
+```{r, message=FALSE, warning=FALSE}
+### Randomly generate case/control data under the null hypothesis
+set.seed(12345)
+case <- rbinom(nrow(G),size = 1,prob = 0.3)
+obj.bigSNP$fam$case <- case
+
+
+### Testing for main effects using Logistic regression:
+obj.gwas <- big_univLogReg(G, y01.train = case,
+                           ncores = 6L, maxiter = 100)
+
+
+### QQ plot, Manhattan plot and Genomic Control
+snp_qq(gwas = obj.gwas)
+snp_manhattan(gwas = obj.gwas, infos.chr = CHR, infos.pos = POS)
+
+### Histogram of p-values:
+p_vals <- 2*pnorm(-abs(obj.gwas$score))
+hist(p_vals, breaks = 30)
+
+```
+
+
+Based on the plots above, we can conclude that p-value's distribution is very close to the uniform distribution, which is what we expect.
+
+
+
+\clearpage
+
+\textbf{Proposed Method: Assuming additive effect}
+
+Then, we will apply our proposed methodology for detection of missing interaction, assuming the true effect of gene is additive. Again, we expect to see the distribution of p-values to be close to uniform.
+
+
+
+```{r}
+load("D:/gwas-practice/additive_testing.Rdata")
+
+## View of the result
+head(result_P1)
+
+## QQ plot of p-values
+qq(na.omit(result_P1$P))
+
+## Manhattan plot of p-values:
+manhattan(na.omit(result_P1), suggestiveline = F,genomewideline = -log(0.05/nrow(G)))
+
+## Histogram of p-values:
+hist(result_P1$P, breaks = 30)
+
+
+
+```
+
+
+\clearpage
+
+
+## Simulation to check power:
+
+In this section, we consider to check the power of our proposed approach for detecting GxE interaction via two different simulation settings. First when there are more than one casual genes in the latent model, and second when there is only one casual gene in the model. For all of these settings, we assume that for the casual genes, there are also interactions between them with a common latent environment variable $E$. Furthermore, we only used the genes that are approximately in linkage equilibrium with the threshold of R-square less than 0.01.
+
+
+### Case1: When there are several casual genes:
+
+In this case, we consider the following model:
+$$Y^* = \beta_0 + \beta_1G_1 + ... +\beta_p G_p + \gamma_1G_1E +...+\gamma_pG_pE + \epsilon$$
+
+For simplicity, we choose to not include the main effect of $E$ in our model. These p casual genes $G_1,...,G_p$ are randomly sampled through the genome, with the constraint that each pair of them are approximately on linkage equilibrium (threshold being R-square <= 0.01). In this simulation setting, we are using the following set of parameters:
+
+\begin{enumerate}
+\item $\beta_0 = -1$
+\item $\beta_1 = ... = \beta_p = 0.3$
+\item $\gamma_1 = .... = \gamma_p = 0.6$
+\item $E \sim N(0,\sigma_E = 5)$
+\item $p = 60$
+\end{enumerate}
+
+```{r Simulation_several_genes}
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(1234)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+
+
+### Randomly sample p genes:
+p <- 60
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G,ind.col = indx)
+POS_EFF <- sample(POS_using[freq_counts[3,] >= 200], size = p)
+
+
+
+### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
+bG <- 0.3
+bint1 <- 0.6
+
+
+### Generate the underlying environment variable:
+E <- rnorm(n = length(G_using[,1]), sd = 5)
+
+### Generate the latent variable:
+y_lat <- -1 + apply(bG*G_using[,POS_using %in% POS_EFF],1,sum) + apply(bint1*E*G_using[,POS_using %in% POS_EFF],1,sum) + rnorm(n = length(G_using[,1]), sd = 1)
+case_new <- ifelse(y_lat > 0, 1, 0)
+
+### case_control ratio: 
+table(case_new)
+
+
+### Do the testing:
+waldstats_P1 <- c()
+p_vals_P1 <- c()
+
+for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+  }
+}
+
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+
+
+
+
+### diagnostic plots:
+manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(0.05/ncol(G_using)))
+qq(na.omit(result_P_INT)$P)
+hist(result_P_INT$P, breaks = 30)
+
+
+### Take a look at the p-value of these casual genes:
+head(result_P_INT[result_P_INT$BP %in% POS_EFF, ],10)
+
+
+```
+
+
+Based on the result above, it seems like under this setting, our proposed approach is not powerful to detect any of these casual genes. However, this is not unexpected, since we are eventually fitting models with misspecification during the GWAS step. Note during GWAS we are assuming for each gene the model is in the form of:
+$$Y^* = \beta_0 + \beta_iG_i+ \gamma_iG_iE+\epsilon, \ \text{where} \ \epsilon\sim N(0,1)$$
+which clearly does not hold here, even though $G_i$ and $G_j$ can be viewed as uncorrelated in our data. 
+
+The problem is there are also missing information about $E$ in the error term $\epsilon$, which has correlation with $G_iE$ in the model. I think one potential way to fix this problem is instead of assuming there is one latent environment variable $E$, we assume for each casual gene $G_i$ there will be a different $E_i$ interacting with it, and $E_i$ are independent.
+
+
+### Case 2: When there is only one casual gene in the model:
+
+
+
+In this case, we consider the following model:
+$$Y^* = \beta_0 + \beta_1G_k +\gamma_kG_kE + \epsilon$$
+
+Here $G_k$ is the casual gene we randomly sampled from the genome. The values of our parameters are the same as above.
+
+```{r OneCasualGene}
+############### Power of the proposed method for interaction: With one casual genes
+
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(123)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+
+
+### Randomly sample 1 genes:
+p <- 1
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G,ind.col = indx)
+POS_EFF <- sample(POS_using[freq_counts[3,] >= 200], size = 1)
+
+
+
+### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
+bG <- 0.3
+bint1 <- 0.6
+
+
+
+### Generate the underlying environment variable:
+E <- rnorm(n = length(G_using[,1]), sd = 5)
+
+### Generate the latent variable:
+# y_lat <- -1.5 + 0.1*E + bint1*apply(E*G_using[,POS_using %in% POS_EFF],1,sum) + rnorm(n = length(G_using[,1]), sd = 1)
+# y_lat <- -1 + apply(bG*G_using[,POS_using %in% POS_EFF],1,sum) + apply(bint1*E*G_using[,POS_using %in% POS_EFF],1,sum) + rnorm(n = length(G_using[,1]), sd = 1)
+y_lat <- -1 + bG*G_using[,POS_using == POS_EFF] + bint1*E*G_using[,POS_using == POS_EFF] + rnorm(n = length(G_using[,1]), sd = 1)
+case_new <- ifelse(y_lat > 0, 1, 0)
+
+### case_control ratio: 
+table(case_new)
+
+
+#### Testing for interaction effect
+### Assuming additive model: Testing for non-linearity
+waldstats_P1 <- c()
+p_vals_P1 <- c()
+
+for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+  }
+}
+
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+
+
+
+### diagnostic plots:
+manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], annotatePval = 0.05/ncol(G_using), suggestiveline = FALSE, genomewideline = -log10(0.05/ncol(G_using)))
+qq(na.omit(result_P_INT)$P)
+hist(result_P_INT$P, breaks = 30)
+
+
+
+result_P_INT[result_P_INT$BP %in% POS_EFF, ]
+```
+
+
+
+Here we can see that our proposed method works well to identify the true casual gene in this simulation example. We assumed a quite large interaction effect and large variance of the environment variable to make sure that the casual gene will be easy to be found by our method, since our sample size is very small in this example.
+
+
+\clearpage
+
+
+### Aggregating p-values through k repetitions:
+
+
+In order to better understand the power of our proposed method, we will perform the simulation study with only one casual gene and aggregate the result for K = 30 times:
+
+
+
+```{r definedRepetitionFunction, include=FALSE}
+
+Proposed_Aggreg <- function(k = 10, SNP_names, Gusing, POS_using, CHR_using, effective_gene, bG = 0.3, bint1 = 0.6, sigmaE = 5){
+  result <- tibble()
+  cores= parallel::detectCores()
+  cl <- parallel::makeCluster(cores[1]-2) #not to overload your computer
+  doParallel::registerDoParallel(cl)
+  result <- foreach(i=1:k, .combine='rbind') %dopar% {
+    Do_once <- function(MySNP_names, G_using, MyPOS_using, MyCHR_using, Myeffective_gene, MybG = 0.3, Mybint1 = 0.6, MysigmaE = 5){
+  E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+  y_lat <- -1 + bG*G_using[,POS_using == effective_gene] + bint1*E*G_using[,POS_using == effective_gene] + rnorm(n = length(G_using[,1]), sd = 1)
+  case_new <- ifelse(y_lat > 0, 1, 0)
+  waldstats_P1 <- c()
+  p_vals_P1 <- c()
+  for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+    }
+  }
+  result_P_INT <- dplyr::tibble(SNP = SNP_names, CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+}
+    Do_once(SNP_names, Gusing, POS_using, CHR_using, effective_gene, bG, bint1, sigmaE)
+  }
+  result
+  #stop cluster
+  parallel::stopCluster(cl)
+  result
+}
+```
+
+```{r Agg}
+
+
+### First randomly draw a position:
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(123)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+p <- 1
+freq_counts <- big_counts(G,ind.col = indx)
+POS_EFF <- sample(POS_using[freq_counts[3,] >= 200], size = 1)
+
+
+### Let's repeat for 30 times
+result <- Proposed_Aggreg(k = 30, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF)
+manhattan(result, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], annotatePval = 0.05/ncol(G_using), suggestiveline = FALSE, genomewideline = -log10(0.05/ncol(G_using)))
+qq(na.omit(result)$P)
+hist(result$P, breaks = 30)
+
+
+### Check for power:
+classifications <- result %>% filter(BP == POS_EFF) %>% mutate(classified = ifelse(P <= 0.05/ncol(G_using), 1, 0)) %>% select(classified) %>% pull()
+sum(classifications)/length(classifications)
+
+
+### Check for type I error rate:
+error <- result %>% filter(BP != POS_EFF) %>% mutate(classified = ifelse(P <= 0.05/ncol(G_using), 1, 0)) %>% select(classified) %>% pull()
+sum(error)/length(error)
+```
+
+
+Based on the result above, with 30 times aggregations, our power is estimated to be around 60%, while the type I error rate is estimated to be zero in these simulations. This is partially because we are using bonferroni correction for multiple hypothesis testing.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
