@@ -1,0 +1,1130 @@
+---
+title: "Progress report: Detecting interaction with unknown environmental covariate"
+author: "Ziang Zhang"
+date: "15/10/2020"
+output: 
+  pdf_document:
+    keep_tex: true
+    number_sections: true
+    fig_caption: yes
+    toc: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, dev = 'png', message = F, warning = F)
+library(tidyverse)
+library(lme4)
+library(bigsnpr)
+library(bigstatsr)
+library(dplyr)
+library(nlme)
+library(aod)
+library(qqman)
+library(foreach)
+library(doParallel)
+```
+
+# The Underlying Model:
+
+For binary response variable, it is often assumed that the response variable $y$ conditioning on the regressors $G,Z$ come from a latent model such that:
+\begin{equation}\label{eqn:latentformulation}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\end{aligned}
+\end{equation}
+
+The unobserved latent variable $Y^*$ determines whether the observed response variable $Y$ is 0 or 1. The error term $\epsilon$ in $Y^*$ needs to have a completely known distribution, which can be $\text{N}(0,1)$ for the model of $Y|G,Z$ to become a probit model, or a logistic distribution with mean 0 and variance 3.28 for the model of $Y|G,Z$ to become a logistic regression model. 
+
+Here the regressor $G$ represents the allele of interest, and the regressor $Z$ is any regressor that can be non-genetic. For now on, we will assume the model is probit for simplicity, unless otherwise indicated. For probit regression model, we can express $\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg)$ as:
+\begin{equation}\label{eqn:probitModelLinearity}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 + \beta_G G + \beta_Z Z \\
+\end{aligned}
+\end{equation}
+Where $\Phi(.)$ denote the CDF function of standard normal distribution.
+
+
+
+
+
+
+Similarly, we can have a Genotypic Model defined as:  
+\begin{equation}\label{eqn:latentformulationGeno}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_{G1} I(G = 1) + \beta_{G2} I(G = 2) + \beta_Z Z + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\end{aligned}
+\end{equation}
+
+Therefore, the regression model can be written as:
+\begin{equation}\label{eqn:probitModelLinearity2}
+\begin{aligned}
+\Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
+                                       &= \beta_0 +\beta_{G1} I(G = 1) + +\beta_{G2} I(G = 2) + \beta_Z Z \\
+\end{aligned}
+\end{equation}
+
+The Genotypic Model has higher degree of freedom than the additive model due to the extra regression parameter.
+
+It can be noticed that the variance parameter of $\epsilon$ is fixed to a specific constant to avoid the problem of identifiability, since we cannot identify both $\beta$ and $\text{Var}(\epsilon)$ in $\frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}$.
+
+
+
+## When the true model does contain gene-environment interaction
+
+Assume for simplicity that $E_i$ the environmental variable has a normal distribution with mean $\mu_E$ and variance $\sigma_E^2$, and suppose that the true underlying model is:
+\begin{equation}\label{eqn:probitModelWithInteraction}
+\begin{aligned}
+Y^* &= \beta_0 + \beta_G G + \beta_Z Z + \beta_E E + \beta_{G\times E} G \times E + \epsilon \\
+Y &= I\{Y^*>0\} \\
+\epsilon &\sim \text{N}(0,1)
+\end{aligned}
+\end{equation}
+
+Furthermore, we can compute that:
+\begin{equation}\label{eqn:probitModelWithInteraction_MeanVar}
+\begin{aligned}
+\text{E}(Y^*|G,Z) &= \beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z \\
+\text{Var}(Y^*|G,Z) &= (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \\
+Y^*|G, Z &\sim \text{N}\bigg(\beta_0 + \beta_E \mu_E + (\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z, (\beta_{G\times E} G)^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1 \bigg)
+\end{aligned}
+\end{equation}
+
+That implies that the probability we get a case for different levels of $G$ and $Z$ will be:
+\begin{equation}\label{eqn:probitModelWithInteraction_Prob} 
+\begin{aligned} 
+\text{P}(Y = 1 | G, Z) &= \text{P}(Y^* > 0| G, Z) \\ 
+                           &= \text{P}(\frac{Y^*  - \text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} > \frac{-\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}}) \\
+                           &= \Phi \bigg( \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \bigg)
+\end{aligned}
+\end{equation}
+
+
+Therefore, applying the inverse CDF on both sides, we get $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$ 
+
+This is only a linear function of $G$ when the interaction parameter $\beta_{G\times E} = 0$, and the slope of Z is constant across different genes only when $\beta_{G\times E}$ is zero.
+
+\begin{enumerate}
+\item If the true underlying model also contains another regressor $W$ but $W$ is uncorrelated with $G$ for example. Then even though ignoring that regressor scales all the regression parameters by an unknown constant (since now $\epsilon$ does not follow standard normal), but $\Phi^{-1}(\text{P}(Y = 1|G,Z))$ will still be a linear function of $G$. So detecting based on the linearity of $\Phi^{-1}\text{P}$ will not be affected by omitted exogenous regressors.
+\item Even though $\Phi^{-1}\text{P}$ is not linear in G as shown above, this model can still be rewritten as a valid genotypic probit regression model by regressing on $I(G=1)$ and $I(G=2)$. The genotypic model in this case will have six regression parameters in this case (two for effects of G, three for slopes of Z, and one intercept).
+\item The reason we used probit model instead of logistic model here is that assuming $E$ follows normal distribution, $Y^*|G,Z$ will still be normal if we omit the interaction term, since linear combination of normal is normal. But assuming $E$ follows logistic distribution does not imply that $Y^*|G,Z$ will be logistically distributed as logistic distribution is not closed under linear combination. However, logistic regression model for $Y|G,Z$ implies that $Y^*|G,Z$ must follow logistic distribution. In other words, probit regression model with omitted covariate will still be a probit regression model, just with different regression parameters. Based on the literature, it seems like probit model and logistic model have really closed results in real applications.
+\end{enumerate}
+
+
+
+
+If the model is Genotypic instead:
+\begin{equation}\label{eqn:genointer}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_{G1} I(G_i = 1) + \beta_{G2} I(G_i = 2) + \beta_Z Z_i + \beta_E E_i + \beta_{G1E} I(G_i = 1) \times E_i + \beta_{G2E} I(G_i = 2) \times E_i  + \epsilon_i \\
+\end{aligned}
+\end{equation}
+
+then we can derive the following:
+$$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_{G1} + \beta_{G1E} \mu_E)I(G = 1)+(\beta_{G2} + \beta_{G2E} \mu_E)I(G = 2) + \beta_Z Z}{\sqrt{(\beta_{G1E}^2 I(G = 1) \sigma_E^2 +\beta_{G2E}^2 I(G = 2) \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} $$
+In this case, the model will still be linear in $I(G = 1), I(G = 2)$ because of the extra parameter, just with different regression parameters. But the slope of Z will continue to differ between different Genetic types unless the there are no interaction effects $\beta_{G1E}$ and $\beta_{G2E}$.
+
+
+
+
+
+# Compare with the traditional method for normal data:
+
+When the response variable $Y$ is normally distributed, the traditional method to test for potential GxE interaction is based on the test of heteroskedasticity of $Y$ for different genotypes. The idea is that if:
+$$ Y = \beta_0 + \beta_1G + \gamma_1 G\times E+ \epsilon, \ \text{where} \ \epsilon\sim N(0,\sigma^2) $$
+then we can see that $Var(Y|G) = \gamma_1^2G^2Var(E)+\epsilon$ if we assume that $E$ is uncorrelated with $G$. In other words, the conditional variance of $Y$ is a quadratic function of $G$.
+
+
+If the response data is binary, and we assume that the true underlying model is a probit model as in the previous section, then the situation for the latent variable $Y^*$ is basically the same, except that our $\epsilon$ follows a specific standard normal distribution. It would suffice if we can detect the heteroskedasticity of our latent variable $Y^*$, but unlike the case of normal data, these normally distributed $Y^*$ are not directly observable. For binary data, the only observable quantities related to $Y^*$ is the binary variable $Y = I(Y^*>0)$.
+
+
+Therefore, as described in the previous section, since $Y|G \sim Ber(p=\Phi\big(\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big))$, the conditional variance of $Y^*$ is not identifiable from the data. However, this ratio of $\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}$ can still be identified, and the numerator is always a linear function of $G$ regardless of whether there is GxE interaction. 
+
+
+It worth notice that we cannot use infer the GxE interaction from $Var(Y|G)$ if $Y$ is binary data, since unlike normal variable, Bernoulli variable's variance is directly specified through their means. In this case, each $Y$ will be Bernoulli variable with fixed variance being $\Phi\big(\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big)\Phi\big(-\frac{E(Y^*|G)}{\sqrt{Var(Y^*|G)}}\big)$. This also implies that we cannot identify any overdispersion parameter if we are using individual-level probit model.
+
+
+If we choose to work with the group-level data (i.e. binomial data for number of cases of each genotype), then we can estimate the overdispersion parameter. However, that overdispersion parameter quantifies how individuals in the dataset are correlated (i.e. how is the distribution of number of cases of each genotype different from a binomial distribution), which will not be our primary interest here.
+
+
+\clearpage
+
+
+
+
+
+
+
+# Method for Additive Model:
+
+In this section, I will present a method for the detection of interaction effect when the true model is additive.
+
+## Testing of Linearity:
+Recall that when the model is additive, then: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}}$$ 
+
+
+This method relies on checking linearity of $\Phi^{-1}(P)$, so the test statistics will also focus on the detection of potential deviation from linearity (or additivity). Note that the above 1 degree of freedom regression model, although it is not linear in $G$, it can be rewritten as a valid 2 degree of freedom genotypic model that is linear in $I(G=1), I(G=2)$:
+
+\begin{equation}
+\begin{aligned}
+\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) &= \frac{\beta_0+\beta_E \mu_E+(\beta_G + \beta_{G\times E} \mu_E)G + \beta_Z Z}{\sqrt{(\beta_{G\times E}^2 G^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} \\
+                                              &= \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G=2) + \gamma_{Z1G} I(G=1) * Z + \gamma_{Z2G} I(G=2) * Z + \gamma_Z Z 
+\end{aligned}
+\end{equation}
+
+Here, we can compute that:
+\begin{equation}
+\begin{aligned}
+& \gamma_0 = \frac{\beta_0 + \beta_E \mu_E}{\sqrt{\beta_E^2 \sigma_E^2 + 1}} \\
+& \gamma_1 = \frac{\beta_0 + \beta_E \mu_E + \beta_G + \beta_{G\times E} \mu_E}{\sqrt{\beta_{G\times E}^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1}} - \gamma_0 \\
+& \gamma_2 = \frac{\beta_0 + \beta_E \mu_E + 2(\beta_G + \beta_{G\times E} \mu_E)}{\sqrt{4\beta_{G\times E}^2 \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1}} - \gamma_0
+\end{aligned}
+\end{equation}
+
+Therefore, we can conclude that if $\beta_{G\times E} = 0$, then $\beta_G =2\gamma_1 = \gamma_2$ must hold. If we further have the information on the covariate $Z$, then we can increase the power of our detection by also testing on $\gamma_{Z1G} = \gamma_{Z2G} =0$ (equal slopes of Z across genotypes).
+
+
+### Wald Test Statistics:
+
+To test the null hypothesis of $\beta_{G\times E} = 0$, we can use the following steps:
+
+\textbf{1. Rewrite the additive regression model:}
+We first rewrite the additive regression model as a genotypic model, i.e: $$\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) = \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G=2) + \gamma_{Z1G} I(G=1) * Z + \gamma_{Z2G} I(G=2) * Z + \gamma_Z Z$$
+
+Now, the regression parameters in this model may not carry very meaningful interpretations due to the potential presence of $\beta_{G\times E}$. However, we can use them to detect the presence of missing interaction effect by either testing $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, depending on whether the information of $Z$ is available, and whether $Z$ is ordinal.
+
+\textbf{2. Wald Test on linearity:}
+To test $H_0: 2\gamma_1 = \gamma_2$ or $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$, we can simply do a Wald test on the genotypic working model that we considered above. It turns out that this Wald test statistic $T$ can also be equivalently derived through an application of Delta method on sample proportion, or as a two-stage linear regression. 
+
+If we have information about the covariate $Z$ in the regression model, and $Z$ is an ordinal variable with additive effect, then the power of our test will be augmented if we test $H_0: 2\gamma_1 = \gamma_2, \ \gamma_{Z1G}=\gamma_{Z2G} =0$ in our Wald test. We can also only test $H_0: \gamma_{Z1G}=\gamma_{Z2G} =0$, this makes our test robust to the case that G's effect is actually non-additive. However, we then need to be more careful to make sure that $Z$ indeed has no interaction with G or E in the \textbf{true} model. 
+
+
+
+
+
+
+
+
+
+
+
+# Method for Genotypic Model:
+
+
+## Auxiliary variable method:
+
+Recall for a Genotypic Model with interaction like below: 
+\begin{equation}\label{eqn:genointer}
+\begin{aligned}
+Y_i^* &= \beta_0 + \beta_{G1} I(G_i = 1) + \beta_{G2} I(G_i = 2) + \beta_Z Z_i + \beta_E E_i + \beta_{G1E} I(G_i = 1) \times E_i + \beta_{G2E} I(G_i = 2) \times E_i  + \epsilon_i \\
+\end{aligned}
+\end{equation}
+
+
+We can derive that:
+\begin{equation}\label{eqn:RStest}
+\begin{aligned}
+\Phi^{-1} \bigg(\text{P}(Y = 1 | G, Z) \bigg) &= \frac{\beta_0+\beta_E \mu_E+(\beta_{G1} + \beta_{G1E} \mu_E)I(G = 1)+(\beta_{G2} + \beta_{G2E} \mu_E)I(G = 2) + \beta_Z Z}{\sqrt{(\beta_{G1E}^2 I(G = 1) \sigma_E^2 +\beta_{G2E}^2 I(G = 2) \sigma_E^2 + \beta_E^2 \sigma_E^2 + 1)}} \\
+&= \gamma_0 + \gamma_1 I(G = 1) + \gamma_2 I(G = 2) + \gamma_Z Z + \gamma_{Z1G} I(G = 1) \times Z + \gamma_{Z2G} I(G = 2) \times Z
+\end{aligned}
+\end{equation}
+
+where the new parameters $\gamma_{Z1G}$ and $\gamma_{Z2G}$ will be defined as:
+$$\gamma_{Z1G} = \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G1E}^2\sigma_E^2 +1}}-\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2 +1}} $$
+and:
+$$\gamma_{Z2G} = \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G2E}^2\sigma_E^2 +1}}-\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2 +1}} $$
+
+
+In other words, a Genotypic Model with an missing interaction can still be written as a linear function of these two indicator functions of G because of the extra regression parameter. However, ignoring this environment to gene interaction will create an artificial interaction between gene and the covariate Z. Since the interaction effects are zero if and only if the covariate Z has constant slopes across different genotypes, we can test the environmental interaction by testing the null hypothesis $H_0: \gamma_{Z1G} = \gamma_{Z2G} = 0$, using either wald test, likelihood ratio test or score test.
+
+The key in this method is to test the equal slopes of the auxiliary variable $Z$. In order for this method to work, we need the following assumption:
+
+\begin{enumerate}
+\item The auxiliary variable $Z_i$ is assumed to have no interaction effect with G in the model conditional on G, Z and E.
+\item The auxiliary variable $Z_i$ is also assumed to have no interaction effect with E in the model conditional on G, Z and E.
+\end{enumerate}
+
+
+\textbf{Main concern about genotypic model:} When we use the above method to test for the presence of GE interaction in a genotypic model, the power of our test is highly dependent on the true values for $\beta_Z$ and $\beta_{G\times E}$. Since $\gamma_{Z1G}$ and $\gamma_{Z2G}$ will eventually converge to $0$ as $\beta_Z$ gets closer to $0$, or as $\beta_{G\times E}$ gets closer to $0$. In other words, our method has very low power when: $$\frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G1E}^2\sigma_E^2 +1}} \approx \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+\beta_{G2E}^2\sigma_E^2 +1}} \approx \frac{\beta_Z}{\sqrt{\beta_E^2\sigma_E^2+1}}$$
+
+
+
+
+
+
+
+
+
+
+# GWAS Implementation on the 1000 Genome Project Data:
+
+## Simulation to check type I error rate:
+
+\textbf{Classical Testing for Main effect}
+
+
+In this section, we will conduct a GWAS on the 1kGP dataset. The cleaned set of data has 1736 independent individuals and around 2 millions SNPs. However, since our analysis will be more sensitive to the low genotypic frequency of each gene, we will further have some additional quality control to make sure the genotypic frequency is high enough for each category. We further filtered SNPs in this dataset with threshold on MAF being $0.05$, and keep only the SNPs on autosomes. After this additional QC procedure, there are 1749 individuals with 231879 SNPs in our dataset. 
+
+```{r}
+### Read in data:
+path <- "D:/gwas-practice/indep_QC.bed"
+tmpfile  <- tempfile()
+snp_readBed(path, backingfile = tmpfile)
+obj.bigSNP <- snp_attach(paste0(tmpfile , ".rds"))
+
+G   <- obj.bigSNP$genotypes
+CHR <- obj.bigSNP$map$chromosome
+POS <- obj.bigSNP$map$physical.pos
+
+# Check some counts for the 10 first SNPs
+big_counts(G, ind.col = 1:10)
+```
+We randomly assigned an individual to case or control, and assume the disease prevalence is 0.3. Firstly, we conduct the classical logistic regression to test the main effects. Because of the random assignment, the p-values should have similar behavior as $\text{Unif}[0,1]$. The results are summarized into histogram, QQ plot and Manhattan plot at below:
+
+```{r, message=FALSE, warning=FALSE}
+### Randomly generate case/control data under the null hypothesis
+set.seed(12345)
+case <- rbinom(nrow(G),size = 1,prob = 0.3)
+obj.bigSNP$fam$case <- case
+
+
+### Testing for main effects using Logistic regression:
+obj.gwas <- big_univLogReg(G, y01.train = case,
+                           ncores = 6L, maxiter = 100)
+
+
+### QQ plot, Manhattan plot and Genomic Control
+snp_qq(gwas = obj.gwas)
+snp_manhattan(gwas = obj.gwas, infos.chr = CHR, infos.pos = POS)
+
+### Histogram of p-values:
+p_vals <- 2*pnorm(-abs(obj.gwas$score))
+hist(p_vals, breaks = 30)
+
+```
+
+
+Based on the plots above, we can conclude that p-value's distribution is very close to the uniform distribution, which is what we expect.
+
+
+
+\clearpage
+
+\textbf{Proposed Method: Assuming additive effect}
+
+Then, we will apply our proposed methodology for detection of missing interaction, assuming the true effect of gene is additive. Again, we expect to see the distribution of p-values to be close to uniform.
+
+
+
+```{r}
+load("D:/gwas-practice/additive_testing.Rdata")
+
+## View of the result
+head(result_P1)
+
+## QQ plot of p-values
+qq(na.omit(result_P1$P))
+
+## Manhattan plot of p-values:
+manhattan(na.omit(result_P1), suggestiveline = F,genomewideline = -log(0.05/nrow(G)))
+
+## Histogram of p-values:
+hist(result_P1$P, breaks = 30)
+
+
+
+```
+
+
+\clearpage
+
+
+## Simulation to check power:
+
+In this section, we consider to check the power of our proposed approach for detecting GxE interaction via two different simulation settings. We first compare the power of the proposed method with the power of the oracle method when information of $E$ can be collected accurately, and then compare their powers when there is a measurement error in $E$. For all of these settings, we assume that there is only one casual gene in the model, and that true casual gene has both main effect and interaction effect with $E$. Furthermore, we only used the genes that are approximately in linkage equilibrium with the threshold of R-square less than 0.01 in our GWAS.
+
+
+### Power of the proposed method:
+
+In this case, we consider the following model:
+$$Y^* = \beta_0 + \beta_GG_k + \beta_EE+\gamma G_kE + \epsilon$$
+
+Here $G_k$ is the casual gene we randomly sampled from the genome, with the constraint that $G_k$ should have MAF at least 0.3. The values of our parameters are:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+
+
+```{r OneCasualGene}
+############### Power of the proposed method for interaction: With one casual genes
+
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(123)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+
+
+### Randomly sample 1 genes:
+p <- 1
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.3
+POS_EFF <- sample(POS_using[Qualified], size = 1)
+
+
+### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
+b0 <- -1
+bG <- 0.8
+bint <- 0.5
+bE <- 0.3
+
+
+### Generate the underlying environment variable:
+E <- rnorm(n = length(G_using[,1]), sd = 1)
+
+### Generate the latent variable:
+y_lat <- b0 + bG*G_using[,POS_using == POS_EFF] + bE*E + bint*E*G_using[,POS_using == POS_EFF] + rnorm(n = length(G_using[,1]), sd = 0.5)
+case_new <- ifelse(y_lat > 0, 1, 0)
+
+### case_control ratio: 
+table(case_new)
+
+
+#### Testing for interaction effect
+### Assuming additive model: Testing for non-linearity
+waldstats_P1 <- c()
+p_vals_P1 <- c()
+
+for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+  }
+}
+
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+
+
+
+### diagnostic plots:
+manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+qq(na.omit(result_P_INT)$P)
+hist(result_P_INT$P, breaks = 30)
+
+
+
+result_P_INT[result_P_INT$BP %in% POS_EFF, ]
+```
+
+Here we can see that our proposed method works well to identify the true casual gene in this simulation example. We assumed a quite large interaction effect compared to the main effect of $E$, and we assume a very small variance for $\sigma_\epsilon^2$ to make sure that the casual gene will be easy to be found by our method, since our sample size is very small in this example.
+
+
+\clearpage
+
+
+### Aggregating p-values through k repetitions:
+
+
+In order to better understand the power of our proposed method, we will perform the simulation study with only one casual gene and aggregate the result for K = 50 times:
+
+Here $G_k$ is the casual gene we randomly sampled from the genome, with the constraint that $G_k$ should have MAF at least 0.25. The values of our parameters are:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.3$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+
+```{r definedRepetitionFunction, include=FALSE}
+Proposed_Aggreg <- function(k = 10, SNP_names, Gusing, POS_using, CHR_using, effective_gene, b0 = -1,bE = 0.1, bG = 0.6, bint1 = 0.3, sigmaE = 5,sigma_eps = 1){
+  result <- tibble()
+  cores= parallel::detectCores()
+  cl <- parallel::makeCluster(cores[1]-2) #not to overload your computer
+  doParallel::registerDoParallel(cl)
+  result <- foreach(i=1:k, .combine='rbind') %dopar% {
+    Do_once <- function(MySNP_names, G_using, MyPOS_using, MyCHR_using, Myeffective_gene, MybG = 0.3, Mybint1 = 0.6, MysigmaE = 5){
+  E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+  y_lat <- b0 + bE*E + bG*G_using[,POS_using == effective_gene] + bint1*E*G_using[,POS_using == effective_gene] + rnorm(n = length(G_using[,1]), sd = sigma_eps)
+  case_new <- ifelse(y_lat > 0, 1, 0)
+  waldstats_P1 <- c()
+  p_vals_P1 <- c()
+  for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+    }
+  }
+  result_P_INT <- dplyr::tibble(SNP = SNP_names, CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+}
+    Do_once(SNP_names, Gusing, POS_using, CHR_using, effective_gene, bG, bint1, sigmaE)
+  }
+  result
+  #stop cluster
+  parallel::stopCluster(cl)
+  result
+}
+```
+
+```{r Agg}
+### First randomly draw a position:
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(123)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+p <- 1
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.25
+POS_EFF <- sample(POS_using[Qualified], size = 1)
+
+
+### Let's repeat for 30 times
+result <- Proposed_Aggreg(k = 50, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.3, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+manhattan(result, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+qq(na.omit(result)$P)
+hist(result$P, breaks = 30)
+
+
+### Check for power:
+classifications <- result %>% filter(BP == POS_EFF) %>% mutate(classified = ifelse(P <= (5 * (10 ^ -8)), 1, 0)) %>% select(classified) %>% pull()
+sum(classifications)/length(classifications)
+
+
+### Check for type I error rate:
+error <- result %>% filter(BP != POS_EFF) %>% mutate(classified = ifelse(P <= (5 * (10 ^ -8)), 1, 0)) %>% select(classified) %>% pull()
+sum(error)/length(error)
+```
+
+
+Based on the result above, with 50 times aggregations, our power is estimated to be around 10%, while the type I error rate is estimated to be zero in these simulations.
+
+
+
+Then we changed the setting of our simulation. The values of our parameters now are:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+
+
+```{r}
+### First randomly draw a position:
+### Again, first take account of the linkage disequilibrium problem:
+set.seed(123)
+
+### Let's repeat for 30 times
+result <- Proposed_Aggreg(k = 50, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+manhattan(result, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+qq(na.omit(result)$P)
+hist(result$P, breaks = 30)
+
+
+### Check for power:
+classifications <- result %>% filter(BP == POS_EFF) %>% mutate(classified = ifelse(P <= (5 * (10 ^ -8)), 1, 0)) %>% select(classified) %>% pull()
+sum(classifications)/length(classifications)
+
+
+### Check for type I error rate:
+error <- result %>% filter(BP != POS_EFF) %>% mutate(classified = ifelse(P <= (5 * (10 ^ -8)), 1, 0)) %>% select(classified) %>% pull()
+sum(error)/length(error)
+```
+
+By increasing $\gamma$ from $0.3$ to $0.5$, we can see that the power of our proposed approach increases significantly.
+
+
+\textbf{Summary:} Through simulation study above, we found that the performance of our proposed approach is highly dependent on the following:
+
+- How large is $\gamma$ compared to $\beta_E$: Increasing $\beta_E$ will significantly decrease the power.
+- How large is $Var(\epsilon)= \sigma^2_\epsilon$: Decreasing this will increase the power of our procedure, sometimes by a lot.
+- How large is $|\beta_G|$: Higher $|\beta_G|$ is also associated with higher power.
+
+
+\clearpage
+
+
+
+## Comparison between the Proposed method with oracle method:
+
+
+Here we still consider the 1kGP dataset which we used in the last section. The true underlying model of our simulation will be:
+$$Y^* = \beta_0 + \beta_GG_k + \beta_EE+\gamma G_kE + \epsilon$$ with the following model specifications:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+The $G_k$ will be sampled for six times, with different levels of MAF in each time.  
+
+
+We will compare our proposed method with the oracle method, which assumes that the information about $E$ can be observed (either with measurement error or not), so the direct test of $G\times E$ is possible. When there exists measurement error in $E$, we assume that the observed $\tilde{E}=E+W$ where $W \sim N(0,\sigma_w^2 = 0.25\sigma_E^2)$ is independent of $E$. 
+
+
+### Power Comparison:
+
+```{r ComparisonFunction, include=FALSE}
+Compare_Aggreg_type1_error <- function(SNP_names, G_using, POS_using, CHR_using, effective_gene, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0.5, sigmaE = 5,sigma_eps = 1, measure_error_percentage = 1/4){
+  result <- tibble()
+  Do_once <- function(MySNP_names, G_using, MyPOS_using, MyCHR_using, Myeffective_gene, MybG = 0.3, Mybint1 = 0.6, MysigmaE = 5){
+    E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+    E2 <- E + rnorm(n = length(G_using[,1]), sd = sigmaE * sqrt(measure_error_percentage))
+    y_lat <- b0 + bE*E + bG*G_using[,POS_using == effective_gene] + bint1*E*G_using[,POS_using == effective_gene] + rnorm(n = length(G_using[,1]), sd = sigma_eps)
+    case_new <- ifelse(y_lat > 0, 1, 0)
+    waldstats_P1 <- c()
+    p_vals_P1 <- c()
+    p_vals_P2 <- c()
+    p_vals_P3 <- c()
+    for (i in 1:ncol(G_using)) {
+      Gi <- G_using[,i]
+      if(length(unique(Gi)) != 3 | i == which(POS_using == effective_gene)){
+        waldstats_P1[i] <- 0
+        p_vals_P1[i] <- 1
+        p_vals_P2[i] <- 1
+        p_vals_P3[i] <- 1
+      }
+      else{
+        modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+        waldstats_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+        p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+        oracle <- glm(case_new ~ Gi*E, family = binomial(link = "probit"))
+        p_vals_P2[i] <- summary(oracle)$coefficient[4,4]
+        oracle_error <- glm(case_new ~ Gi*E2, family = binomial(link = "probit"))
+        p_vals_P3[i] <- summary(oracle_error)$coefficient[4,4]
+      }
+    }
+    result_P_INT <- dplyr::tibble(SNP = SNP_names, CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1, oracle_p = p_vals_P2, oracle_error = p_vals_P3)
+  }
+  Do_once(SNP_names, G_using, POS_using, CHR_using, effective_gene, bG, bint1, sigmaE)
+}
+
+
+Compare_Aggreg_power <- function(k = 50, G_using, POS_using, effective_gene, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0.5, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4){
+  p_vals_P1 <- c()
+  p_vals_P2 <- c()
+  p_vals_P3 <- c()
+  for (i in 1:k) {
+    E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+    E2 <- E + rnorm(n = length(G_using[,1]), sd = sigmaE * sqrt(measure_error_percentage))
+    Gi <- G_using[,POS_using == effective_gene]
+    y_lat <- b0 + bE*E + bG*Gi + bint1*E*Gi + rnorm(n = length(Gi), sd = sigma_eps)
+    case_new <- ifelse(y_lat > 0, 1, 0)
+    waldstats_P1 <- c()
+    modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
+    waldstats_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[1])
+    p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+    oracle <- glm(case_new ~ Gi*E, family = binomial(link = "probit"))
+    p_vals_P2[i] <- summary(oracle)$coefficient[4,4] 
+    oracle_error <- glm(case_new ~ Gi*E2, family = binomial(link = "probit"))
+    p_vals_P3[i] <- summary(oracle_error)$coefficient[4,4]
+  }
+  tibble(proposed = p_vals_P1, oracle = p_vals_P2, oracle_error = p_vals_P3)
+}
+```
+
+
+
+```{r PowerComparison}
+set.seed(123)
+
+### Sample three casual genes, corresponding to different MAF
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
+POS_EFF1 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.1 & MAF<=0.15
+POS_EFF2 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+POS_EFF3 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.2 & MAF<=0.3
+POS_EFF4 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3 & MAF<=0.4
+POS_EFF5 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.4
+POS_EFF6 <- sample(POS_using[Qualified], size = 1)
+
+
+### show their corresponding MAF:
+sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3, POS_EFF4, POS_EFF5, POS_EFF6)])
+
+
+### Compute power of each case:
+suppressWarnings(power1 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, sigma_eps = 0.5))
+power1 <- power1 <= 5 * (10 ^ -8)
+power1 <- apply(power1, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power2 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, sigma_eps = 0.5))
+power2 <- power2 <= 5 * (10 ^ -8)
+power2 <- apply(power2, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power3 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, sigma_eps = 0.5))
+power3 <- power3 <= 5 * (10 ^ -8)
+power3 <- apply(power3, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power4 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF4, sigma_eps = 0.5))
+power4 <- power4 <= 5 * (10 ^ -8)
+power4 <- apply(power4, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power5 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF5, sigma_eps = 0.5))
+power5 <- power5 <= 5 * (10 ^ -8)
+power5 <- apply(power5, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power6 <- Compare_Aggreg_power(k = 100, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, sigma_eps = 0.5))
+power6 <- power6 <= 5 * (10 ^ -8)
+power6 <- apply(power6, MARGIN = 2, FUN = mean)
+## Table:
+power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
+kableExtra::kable(power,caption = "Comparison of Power")
+## Figure:
+power %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
+
+
+
+
+```
+
+Seems like the oracle method with information of `E` will have better power than the proposed method, regardless whether there is measurement error. This difference gets smaller as `MAF` increases.
+
+
+
+\clearpage
+
+
+
+
+### Type I error Comparison:
+
+
+
+```{r errorcompare}
+set.seed(123)
+
+### Sample three casual genes, corresponding to different MAF
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
+POS_EFF1 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+POS_EFF2 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+POS_EFF3 <- sample(POS_using[Qualified], size = 1)
+
+### show their corresponding MAF:
+sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
+
+
+### Compute type I error rate of each case:
+#1:
+error1 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF1, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+error1 <- error1 %>% filter(BP != POS_EFF1) %>% select(P:oracle_error)
+r1 <- apply(error1<= 5 * (10 ^ -2), 2, mean)
+
+
+#3:
+error2 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF2, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+error2 <- error2 %>% filter(BP != POS_EFF2) %>% select(P:oracle_error)
+r2 <- apply(error2<=5 * (10 ^ -2), 2, mean)
+
+#5:
+error3 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF3, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+error3 <- error3 %>% filter(BP != POS_EFF3) %>% select(P:oracle_error)
+r3 <- apply(error3<=5 * (10 ^ -2), 2, mean)
+
+
+r <- as_tibble(rbind(r1,r2,r3))
+r$MAF <- sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
+r %>% rename(c("proposed" = "P","oracle" = "oracle_p")) %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(MAF,Error,color = Type)) + geom_line() + ylab("Type I Error") + geom_hline(aes(yintercept = 0.05))
+
+
+```
+
+The above plot shows the relationship between the observed type I error rate (assuming significance level of 5 percent) with the MAF of the `casual` gene in the underlying model. Next, we can take a look into the relationship between MAF (of non-casual genes) and the observed type I error rate:
+
+```{r}
+all_error <- as_tibble(error3<=0.05)
+all_error <- all_error %>% mutate(MAF = MAF[!POS_using %in% c(POS_EFF5)])
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.2","0.05-0.1")
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.3", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.4", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.4, "0.4-0.5", all_error$MAF_level)
+
+
+all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed = mean(P), oracle = mean(oracle_p), oracle_error = mean(oracle_error), number = n())
+
+all_error <- all_error %>% mutate(upper = 0.05 + 3*sqrt(0.05*0.95/number), lower = 0.05 - 3*sqrt(0.05*0.95/number))
+
+all_error %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+
+```
+
+The range in each category is computed using $\alpha \pm 3\sqrt{\alpha\times(1-\alpha)/\text{num.rep}}$. Note that for very low MAF level (0.05-0.1), the type I error rate of our proposed method seems invalid. However, as MAF level increases, all the methods seem to have correct type I error behaviors.
+
+
+
+\clearpage
+
+
+
+
+## Simulation with Auxiliary Variable:
+
+Now, assumes that the true underlying model has the form: $$Y^* = \beta_0 + \beta_GG_k + \beta_EE+\gamma G_kE +\beta_ZZ + \epsilon$$ where $Z$ is an auxiliary variable which is known to have no interaction with environmental variable $E$. 
+
+```{r echo=FALSE}
+### Function
+Compare_Aggreg_power_auxiliary <- function(k = 50, G_using, POS_using, effective_gene, b0 = -1,bE = 0.2, bG = 0.8, bint1 = 0.4, betaZ = 0.8, sigmaE = 1, sigma_eps = 1, measure_error_percentage = 1/4){
+  p_vals_P1 <- c()
+  p_vals_P2 <- c()
+  p_vals_P3 <- c()
+  p_vals_P0 <- c()
+  for (i in 1:k) {
+    Z <- rnorm(n = length(G_using[,1]), mean = 0, sd = 1)
+    E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+    E2 <- E + rnorm(n = length(G_using[,1]), sd = sigmaE * sqrt(measure_error_percentage))
+    Gi <- G_using[,POS_using == effective_gene]
+    y_lat <- b0 + bE*E + bG*Gi + bint1*E*Gi + betaZ * Z + rnorm(n = length(Gi), sd = sigma_eps)
+    case_new <- ifelse(y_lat > 0, 1, 0)
+    modi <- glm(case_new ~ factor(Gi)*Z, family = binomial(link = "probit"))
+    p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[c(2,3),c(2,3)], b = modi$coefficients[c(2,3)], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+    p_vals_P0[i] <- as.numeric(aod::wald.test(vcov(modi)[-c(1,4),-c(1,4)], b = modi$coefficients[-c(1,4)], H0 = matrix(0,nrow = 3,ncol = 1), L = matrix(c(2,-1,0,0,0,0,1,0,0,0,0,1),nrow = 3, byrow = T))$result$chi2[3]) 
+    oracle <- glm(case_new ~ Gi*E + Z, family = binomial(link = "probit"))
+    p_vals_P2[i] <- summary(oracle)$coefficient[5,4] 
+    oracle_error <- glm(case_new ~ Gi*E2 + Z, family = binomial(link = "probit"))
+    p_vals_P3[i] <- summary(oracle_error)$coefficient[5,4]
+  }
+  tibble(proposed_1 = p_vals_P1, proposed_2 = p_vals_P0, oracle = p_vals_P2, oracle_error = p_vals_P3)
+}
+
+
+Compare_Aggreg_type1_error_auxiliary <- function(sample = 500, G_using, POS_using, effective_gene, b0 = -1,bE = 0.1, bG = 0.8, bint1 = 0.4, betaZ = 0.8, sigmaE = 1, sigma_eps = 1, measure_error_percentage = 1/4, MAF){
+  result <- tibble()
+  samp_col <- sample(1:ncol(G_using), size = sample, replace = F)
+  Do_once <- function(G_using, MyPOS_using, Myeffective_gene, MybG = 0.3, Mybint1 = 0.6, MysigmaE = 5){
+    Z <- rnorm(n = length(G_using[,1]), mean = 0, sd = 1)
+    E <- rnorm(n = length(G_using[,1]), sd = sigmaE)
+    E2 <- E + rnorm(n = length(G_using[,1]), sd = sigmaE * sqrt(measure_error_percentage))
+    if(is.null(effective_gene)) {y_lat <- b0 + bE*E + betaZ*Z + rnorm(n = length(G_using[,1]), sd = sigma_eps)}
+    else{y_lat <- b0 + bE*E + bG*G_using[,POS_using == effective_gene] + bint1*E*G_using[,POS_using == effective_gene] + betaZ*Z + rnorm(n = length(G_using[,1]), sd = sigma_eps)}
+    case_new <- ifelse(y_lat > 0, 1, 0)
+    p_vals_P1 <- c()
+    p_vals_P2 <- c()
+    p_vals_P3 <- c()
+    p_vals_P0 <- c()
+    for (i in 1:length(samp_col)) {
+      Gi <- G_using[,samp_col[i]]
+      if(length(unique(Gi)) != 3){
+        p_vals_P1[i] <- 1
+        p_vals_P2[i] <- 1
+        p_vals_P3[i] <- 1
+        p_vals_P0[i] <- 1
+      }
+      else{
+        modi <- glm(case_new ~ factor(Gi)*Z, family = binomial(link = "probit"))
+        p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[c(2,3),c(2,3)], b = modi$coefficients[c(2,3)], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3]) 
+        p_vals_P0[i] <- as.numeric(aod::wald.test(vcov(modi)[-c(1,4),-c(1,4)], b = modi$coefficients[-c(1,4)], H0 = matrix(0,nrow = 3,ncol = 1), L = matrix(c(2,-1,0,0,0,0,1,0,0,0,0,1),nrow = 3, byrow = T))$result$chi2[3]) 
+        oracle <- glm(case_new ~ Gi*E + Z, family = binomial(link = "probit"))
+        p_vals_P2[i] <- summary(oracle)$coefficient[5,4] 
+        oracle_error <- glm(case_new ~ Gi*E2 + Z, family = binomial(link = "probit"))
+        p_vals_P3[i] <- summary(oracle_error)$coefficient[5,4]
+      }
+    }
+    result_P_INT <- dplyr::tibble(BP = POS_using[samp_col], proposed_1 = p_vals_P1, proposed_2 = p_vals_P0, oracle_p = p_vals_P2, oracle_error = p_vals_P3, MAF = MAF[samp_col])
+  }
+  Do_once(G_using, POS_using, effective_gene, bG, bint1, sigmaE)
+}
+
+
+```
+
+
+### Analysis of 1KGP data with one casual gene:
+
+Here we repeat the same procedure on the 1kGP data set, assuming that there is one casual gene in the model
+
+
+```{r}
+set.seed(123)
+ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
+indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
+
+
+### Randomly sample 1 genes:
+p <- 1
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.3
+POS_EFF <- sample(POS_using[Qualified], size = 1)
+
+
+### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
+b0 <- -1
+bG <- 0.8
+bint <- 0.4
+bE <- 0.2
+bZ <- 0.3
+
+### Generate the underlying environment variable:
+E <- rnorm(n = length(G_using[,1]), sd = 1)
+
+### Generate the auxiliary variable:
+Z <- rnorm(n = length(G_using[,1]), sd = 1)
+
+### Generate the latent variable:
+y_lat <- b0 + bG*G_using[,POS_using == POS_EFF] + bE*E + bZ*Z + bint*E*G_using[,POS_using == POS_EFF] + rnorm(n = length(G_using[,1]), sd = 0.5)
+case_new <- ifelse(y_lat > 0, 1, 0)
+
+### case_control ratio: 
+table(case_new)
+
+
+#### Testing for interaction effect
+### Assuming additive model: Testing for non-linearity
+waldstats_P1 <- c()
+p_vals_P1 <- c()
+
+for (i in 1:ncol(G_using)) {
+  Gi <- G_using[,i]
+  
+  if(length(unique(Gi)) != 3){
+    waldstats_P1[i] <- 0
+    p_vals_P1[i] <- 1
+  }
+  else{
+    modi <- glm(case_new ~ factor(Gi)*Z, family = binomial(link = "probit"))
+    if(any(is.na(modi$coefficients))){
+      waldstats_P1[i] <- 0
+      p_vals_P1[i] <- 1
+      
+    }
+    else{
+      waldstats_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-c(1,4),-c(1,4)], b = modi$coefficients[-c(1,4)], H0 = matrix(0,nrow = 3,ncol = 1), L = matrix(c(2,-1,0,0,0,0,1,0,0,0,0,1),nrow = 3, byrow = T))$result$chi2[1])
+      p_vals_P1[i] <- as.numeric(aod::wald.test(vcov(modi)[-c(1,4),-c(1,4)], b = modi$coefficients[-c(1,4)], H0 = matrix(0,nrow = 3,ncol = 1), L = matrix(c(2,-1,0,0,0,0,1,0,0,0,0,1),nrow = 3, byrow = T))$result$chi2[3]) 
+    }
+  }
+}
+
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+qq(na.omit(result_P_INT)$P)
+hist(result_P_INT$P, breaks = 30)
+
+```
+
+\clearpage
+
+
+### Power Comparison:
+
+
+Here we consider the following parameter specification:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.2,\gamma=0.4, \beta_Z=0.8$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+The $G_k$ will be sampled for six times, with different levels of MAF in each time.  
+
+
+
+```{r}
+set.seed(123)
+
+### Sample three casual genes, corresponding to different MAF
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
+POS_EFF1 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 50 & MAF>=0.1 & MAF<=0.15
+POS_EFF2 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+POS_EFF3 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.2 & MAF<=0.3
+POS_EFF4 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3 & MAF<=0.4
+POS_EFF5 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.4
+POS_EFF6 <- sample(POS_using[Qualified], size = 1)
+
+
+### Computation:
+### Compute power of each case:
+suppressWarnings(power1 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, sigma_eps = 0.5, sigmaE = 1))
+power1 <- power1 <= 5 * (10 ^ -8)
+power1 <- apply(power1, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power2 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, sigma_eps = 0.5, sigmaE = 1))
+power2 <- power2 <= 5 * (10 ^ -8)
+power2 <- apply(power2, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power3 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, sigma_eps = 0.5, sigmaE = 1))
+power3 <- power3 <= 5 * (10 ^ -8)
+power3 <- apply(power3, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power4 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF4, sigma_eps = 0.5, sigmaE = 1))
+power4 <- power4 <= 5 * (10 ^ -8)
+power4 <- apply(power4, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power5 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF5, sigma_eps = 0.5, sigmaE = 1))
+power5 <- power5 <= 5 * (10 ^ -8)
+power5 <- apply(power5, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power6 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, sigma_eps = 0.5, sigmaE = 1))
+power6 <- power6 <= 5 * (10 ^ -8)
+power6 <- apply(power6, MARGIN = 2, FUN = mean)
+## Table:
+power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
+kableExtra::kable(power,caption = "Comparison of Power")
+## Figure:
+power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
+```
+
+In this parameter setting, we can see that even though with the help from the auxiliary variable `z`, the power is increased significantly. The proposed methods still in generally have much lower power than the oracle method using information of `E`, regardless whether there is measurement error in `E`. 
+
+Next, we will make a more optimistic parameter setting, by increasing $\gamma$ from $0.4$ to $0.8$, and do the power comparison again:
+
+```{r}
+set.seed(123)
+
+### Computation:
+### Compute power of each case:
+suppressWarnings(power1 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power1 <- power1 <= 5 * (10 ^ -8)
+power1 <- apply(power1, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power2 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power2 <- power2 <= 5 * (10 ^ -8)
+power2 <- apply(power2, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power3 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power3 <- power3 <= 5 * (10 ^ -8)
+power3 <- apply(power3, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power4 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF4, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power4 <- power4 <= 5 * (10 ^ -8)
+power4 <- apply(power4, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power5 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF5, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power5 <- power5 <= 5 * (10 ^ -8)
+power5 <- apply(power5, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power6 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, sigma_eps = 0.5, sigmaE = 1, bint1 = 0.8))
+power6 <- power6 <= 5 * (10 ^ -8)
+power6 <- apply(power6, MARGIN = 2, FUN = mean)
+## Table:
+power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
+kableExtra::kable(power,caption = "Comparison of Power")
+## Figure:
+power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
+```
+
+From the plot above, we can notice that the difference becomes smaller as $\gamma$ gets larger.
+
+
+\clearpage
+
+
+
+### Type I error Comparison:
+
+Still consider the setting:
+- $\beta_0= -1, \beta_G=0.8, \beta_E= 0.2,\gamma=0.8, \beta_Z=0.8$
+- $E \sim N(0,1)$
+- $\epsilon \sim N(0,0.5)$
+Now, we aim to compare the type I error rate of these procedures at different MAF levels:
+
+
+```{r}
+set.seed(123)
+
+### Sample three casual genes, corresponding to different MAF
+freq_counts <- big_counts(G,ind.col = indx)
+MAF <- snp_MAF(G,ind.col = indx)
+Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
+POS_EFF1 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+POS_EFF2 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+POS_EFF3 <- sample(POS_using[Qualified], size = 1)
+
+### show their corresponding MAF:
+sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
+
+
+### Compute type I error rate of each case:
+#1:
+suppressWarnings(error1 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
+r1 <- error1 %>% filter(BP != POS_EFF1) %>% select(proposed_1:oracle_error)
+r1 <- apply(r1<= 5 * (10 ^ -2), 2, mean)
+
+
+#3:
+suppressWarnings(error2 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
+r2 <- error2 %>% filter(BP != POS_EFF2) %>% select(proposed_1:oracle_error)
+r2 <- apply(r2<=5 * (10 ^ -2), 2, mean)
+
+#5:
+suppressWarnings(error3 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
+r3 <- error3 %>% filter(BP != POS_EFF3) %>% select(proposed_1:oracle_error)
+r3 <- apply(r3<=5 * (10 ^ -2), 2, mean)
+
+
+r <- as_tibble(rbind(r1,r2,r3))
+r$MAF <- sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
+r %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(MAF,Error,color = Type)) + geom_line() + ylab("Type I Error") + geom_hline(aes(yintercept = 0.05))
+```
+
+
+Here we pick the last set of simulation (with the MAF of casual gene being 0.42), and study the relationship between MAF and type I error more closely:
+
+
+```{r}
+all_error <- error3 %>% mutate(proposed_1 = proposed_1<=0.05, proposed_2 = proposed_2<=0.05, oracle_p = oracle_p<=0.05, oracle_error = oracle_error<=0.05)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.2","0.05-0.1")
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.3", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.4", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.4, "0.4-0.5", all_error$MAF_level)
+
+
+all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed_1 = mean(proposed_1), proposed_2 = mean(proposed_2), oracle = mean(oracle_p), oracle_error = mean(oracle_error), number = n())
+
+all_error <- all_error %>% mutate(upper = 0.05 + 3*sqrt(0.05*0.95/number), lower = 0.05 - 3*sqrt(0.05*0.95/number))
+
+all_error %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+
+```
+
+
+Based on the above plot, all the procedures have type I error rate in the expected range, regardless of the MAF level.
+
+
+
+```{r}
+error3$MAF_level <- ifelse(error3$MAF >= 0.1, "0.1-0.2","0.05-0.1")
+error3$MAF_level <- ifelse(error3$MAF >= 0.2, "0.2-0.3", error3$MAF_level)
+error3$MAF_level <- ifelse(error3$MAF >= 0.3, "0.3-0.4", error3$MAF_level)
+error3$MAF_level <- ifelse(error3$MAF >= 0.4, "0.4-0.5", error3$MAF_level)
+error3 %>% pivot_longer(proposed_1:oracle_error, names_to = "Type", values_to = "p_value") %>% ggplot(aes(x = p_value, fill = Type)) + geom_histogram(bins = 5) + facet_grid(~MAF_level)
+```
+
+
+
+
+
+
