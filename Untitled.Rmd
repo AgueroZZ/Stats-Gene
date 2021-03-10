@@ -1,0 +1,40 @@
+---
+title: "Power of Wald test for interaction"
+author: "Ziang Zhang"
+date: "09/03/2021"
+output: 
+  pdf_document:
+    keep_tex: true
+    number_sections: true
+    fig_caption: yes
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, dev = 'png', message = F, warning = F)
+```
+
+# Power of Wald test:
+
+## For one parameter:
+
+If we consider using Wald test to test the null hypothesis $H_0:\theta=\theta_0$, the test statistic will be $$\sqrt{\frac{n}{I^{-1}(\hat{\theta})}}\bigg(\hat{\theta} - \theta_0\bigg)$$ where $\hat{\theta}$ is the MLE of $\theta$ and $I^{-1}(\hat{\theta})$ is inverse of the fisher information evaluated at the MLE. 
+
+Under null hypothesis, this test statistic follows a standard normal distribution. If the alternative hypothesis $H_a:\theta=\theta_1 \neq \theta_0$, then the power of our test can be computed as: $$1-\Phi(\Delta+z_{a/2}) + \Phi(\Delta-z_{a/2})$$ where $\Delta = \sqrt{\frac{n}{I^{-1}(\hat{\theta})}}(\theta_0-\theta_1)$.
+
+The important information above is that the power of Wald test will depend on several things at the same time:
+
+- The difference of $\theta_0 - \theta_1$
+- The sample size $n$
+- The `true` information's inverse $I^{-1}(\theta_1)$
+
+In general, higher power is achieved when $\Delta$ is large. That implies, we have higher power if we have larger $|\theta_0 - \theta_1|$, $n$ or smaller $I^{-1}(\theta_1)$.
+
+
+## General Expression and Non-centrality parameter:
+
+In general for a vector of parameter $\theta \in \mathbb{R}^p$, if we are interested in testing the null hypothesis of linear combination of $\theta$: $L\theta = 0$, then the test statistic will be $$(L\hat{\theta})^T L{I_n^{-1}(\hat{\theta})L^T}(L\hat{\theta})$$ which follows a chi-square distribution with $d = rank(H)$ degrees of freedom under the null hypothesis. The matrix $I_n^{-1}(\hat{\theta})$ is the inverse of the fisher information matrix of the whole sample, evaluated at $\theta = \hat{\theta}$.
+
+Specifically, we want to test the case where $L =(0,0,..,1,0..,0)$, a vector with zero everywhere except at the i-th component, then our test statistic reduced to $${I_n^{-1}(\hat{\theta})}_{[i,i]}(\hat{\theta}_i)^2$$ where $\theta_i$ is the i-th component of $\theta$, $I_n^{-1}(\hat{{\theta}})_{[i,i]}$ is the i-th diagonal term of $I_n^{-1}(\hat{{\theta}})$.
+
+
