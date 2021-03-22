@@ -286,7 +286,7 @@ We randomly assigned an individual to case or control, and assume the disease pr
 
 ```{r, message=FALSE, warning=FALSE}
 ### Randomly generate case/control data under the null hypothesis
-set.seed(12345)
+set.seed(12345,sample.kind="Rounding")
 case <- rbinom(nrow(G),size = 1,prob = 0.3)
 obj.bigSNP$fam$case <- case
 
@@ -344,7 +344,7 @@ hist(result_P1$P, breaks = 30)
 
 ## Simulation to check power:
 
-In this section, we consider to check the power of our proposed approach for detecting GxE interaction via two different simulation settings. We first compare the power of the proposed method with the power of the oracle method when information of $E$ can be collected accurately, and then compare their powers when there is a measurement error in $E$. For all of these settings, we assume that there is only one casual gene in the model, and that true casual gene has both main effect and interaction effect with $E$. Furthermore, we only used the genes that are approximately in linkage equilibrium with the threshold of R-square less than 0.01 in our GWAS.
+In this section, we consider to check the power of our proposed approach for detecting GxE interaction via two different simulation settings. We first compare the power of the proposed method with the power of the oracle method when information of $E$ can be collected accurately, and then compare their powers when there is a measurement error in $E$. For all of these settings, we assume that there is only one casual gene in the model, and that true casual gene has both main effect and interaction effect with $E$. 
 
 
 ### Power of the proposed method:
@@ -353,6 +353,7 @@ In this case, we consider the following model:
 $$Y^* = \beta_0 + \beta_GG_k + \beta_EE+\gamma G_kE + \epsilon$$
 
 Here $G_k$ is the casual gene we randomly sampled from the genome, with the constraint that $G_k$ should have MAF at least 0.3. The values of our parameters are:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -362,9 +363,8 @@ Here $G_k$ is the casual gene we randomly sampled from the genome, with the cons
 ############### Power of the proposed method for interaction: With one casual genes
 
 ### Again, first take account of the linkage disequilibrium problem:
-set.seed(123)
-ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
-indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+set.seed(123,sample.kind="Rounding")
+indx <- 1:ncol(G)
 G_using <- G[,indx]
 CHR_using <- CHR[indx]
 POS_using <- POS[indx]
@@ -382,7 +382,7 @@ POS_EFF <- sample(POS_using[Qualified], size = 1)
 ### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
 b0 <- -1
 bG <- 0.8
-bint <- 0.5
+bint <- 0.8
 bE <- 0.3
 
 
@@ -407,7 +407,7 @@ for (i in 1:ncol(G_using)) {
   
   if(length(unique(Gi)) != 3){
     waldstats_P1[i] <- 0
-    p_vals_P1[i] <- 1
+    p_vals_P1[i] <- -1
   }
   else{
     modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
@@ -442,6 +442,7 @@ Here we can see that our proposed method works well to identify the true casual 
 In order to better understand the power of our proposed method, we will perform the simulation study with only one casual gene and aggregate the result for K = 50 times:
 
 Here $G_k$ is the casual gene we randomly sampled from the genome, with the constraint that $G_k$ should have MAF at least 0.25. The values of our parameters are:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.3$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -450,7 +451,7 @@ Here $G_k$ is the casual gene we randomly sampled from the genome, with the cons
 Proposed_Aggreg <- function(k = 10, SNP_names, Gusing, POS_using, CHR_using, effective_gene, b0 = -1,bE = 0.1, bG = 0.6, bint1 = 0.3, sigmaE = 5,sigma_eps = 1){
   result <- tibble()
   cores= parallel::detectCores()
-  cl <- parallel::makeCluster(cores[1]-2) #not to overload your computer
+  cl <- parallel::makeCluster(cores[1]-4) #not to overload your computer
   doParallel::registerDoParallel(cl)
   result <- foreach(i=1:k, .combine='rbind') %dopar% {
     Do_once <- function(MySNP_names, G_using, MyPOS_using, MyCHR_using, Myeffective_gene, MybG = 0.3, Mybint1 = 0.6, MysigmaE = 5){
@@ -463,7 +464,7 @@ Proposed_Aggreg <- function(k = 10, SNP_names, Gusing, POS_using, CHR_using, eff
   Gi <- G_using[,i]
   if(length(unique(Gi)) != 3){
     waldstats_P1[i] <- 0
-    p_vals_P1[i] <- 1
+    p_vals_P1[i] <- -1
   }
   else{
     modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
@@ -485,22 +486,20 @@ Proposed_Aggreg <- function(k = 10, SNP_names, Gusing, POS_using, CHR_using, eff
 ```{r Agg}
 ### First randomly draw a position:
 ### Again, first take account of the linkage disequilibrium problem:
-set.seed(123)
-ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
-indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+set.seed(12345,sample.kind="Rounding")
+p <- 1
+freq_counts <- big_counts(G)
+MAF <- snp_MAF(G)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.25
+POS_EFF <- sample(POS[Qualified], size = 1)
+indx <- which(CHR == CHR[which(POS == POS_EFF)])
 G_using <- G[,indx]
 CHR_using <- CHR[indx]
 POS_using <- POS[indx]
-p <- 1
-freq_counts <- big_counts(G,ind.col = indx)
-MAF <- snp_MAF(G,ind.col = indx)
-Qualified <- freq_counts[3,] >= 200 & MAF>=0.25
-POS_EFF <- sample(POS_using[Qualified], size = 1)
-
 
 ### Let's repeat for 30 times
-result <- Proposed_Aggreg(k = 50, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.3, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
-manhattan(result, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+result <- Proposed_Aggreg(k = 10, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+manhattan(result, highlight = obj.bigSNP$map$marker.ID[indx][which(POS_using == POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
 qq(na.omit(result)$P)
 hist(result$P, breaks = 30)
 
@@ -521,6 +520,7 @@ Based on the result above, with 50 times aggregations, our power is estimated to
 
 
 Then we changed the setting of our simulation. The values of our parameters now are:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -529,7 +529,7 @@ Then we changed the setting of our simulation. The values of our parameters now 
 ```{r}
 ### First randomly draw a position:
 ### Again, first take account of the linkage disequilibrium problem:
-set.seed(123)
+set.seed(123,sample.kind="Rounding")
 
 ### Let's repeat for 30 times
 result <- Proposed_Aggreg(k = 50, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
@@ -567,6 +567,7 @@ By increasing $\gamma$ from $0.3$ to $0.5$, we can see that the power of our pro
 
 Here we still consider the 1kGP dataset which we used in the last section. The true underlying model of our simulation will be:
 $$Y^* = \beta_0 + \beta_GG_k + \beta_EE+\gamma G_kE + \epsilon$$ with the following model specifications:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.3,\gamma=0.5$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -594,9 +595,9 @@ Compare_Aggreg_type1_error <- function(SNP_names, G_using, POS_using, CHR_using,
       Gi <- G_using[,i]
       if(length(unique(Gi)) != 3 | i == which(POS_using == effective_gene)){
         waldstats_P1[i] <- 0
-        p_vals_P1[i] <- 1
-        p_vals_P2[i] <- 1
-        p_vals_P3[i] <- 1
+        p_vals_P1[i] <- -1
+        p_vals_P2[i] <- -1
+        p_vals_P3[i] <- -1
       }
       else{
         modi <- glm(case_new ~ factor(Gi), family = binomial(link = "probit"))
@@ -640,7 +641,7 @@ Compare_Aggreg_power <- function(k = 50, G_using, POS_using, effective_gene, b0 
 
 
 ```{r PowerComparison}
-set.seed(123)
+set.seed(123,sample.kind="Rounding")
 
 ### Sample three casual genes, corresponding to different MAF
 freq_counts <- big_counts(G,ind.col = indx)
@@ -691,9 +692,9 @@ power6 <- apply(power6, MARGIN = 2, FUN = mean)
 power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
 kableExtra::kable(power,caption = "Comparison of Power")
 ## Figure:
-power %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
-
-
+power_plot <- power %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Power") %>% mutate(Type = factor(Type))
+levels(power_plot$Type) <- c("with_E","with_E_error", "without_E")
+power_plot %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
 
 
 ```
@@ -719,36 +720,58 @@ freq_counts <- big_counts(G,ind.col = indx)
 MAF <- snp_MAF(G,ind.col = indx)
 Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
 POS_EFF1 <- sample(POS_using[Qualified], size = 1)
-Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.1 & MAF<=0.15
 POS_EFF2 <- sample(POS_using[Qualified], size = 1)
-Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.15 & MAF<=0.2
 POS_EFF3 <- sample(POS_using[Qualified], size = 1)
-
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.2 & MAF<=0.25
+POS_EFF4 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.25 & MAF<=0.3
+POS_EFF5 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+POS_EFF6 <- sample(POS_using[Qualified], size = 1)
 ### show their corresponding MAF:
-sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
+sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)])
 
 
 ### Compute type I error rate of each case:
 #1:
-error1 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF1, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
-error1 <- error1 %>% filter(BP != POS_EFF1) %>% select(P:oracle_error)
-r1 <- apply(error1<= 5 * (10 ^ -2), 2, mean)
+error1 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r1 <- error1 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
+
+
+
+#2:
+error2 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r2 <- error2 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
 
 
 #3:
-error2 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF2, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
-error2 <- error2 %>% filter(BP != POS_EFF2) %>% select(P:oracle_error)
-r2 <- apply(error2<=5 * (10 ^ -2), 2, mean)
+error3 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r3 <- error3 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
+
+#4:
+error4 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF4, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r4 <- error4 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
+
+
 
 #5:
-error3 <- Compare_Aggreg_type1_error(SNP_names = obj.bigSNP$map$marker.ID[indx], G_using = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF3, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
-error3 <- error3 %>% filter(BP != POS_EFF3) %>% select(P:oracle_error)
-r3 <- apply(error3<=5 * (10 ^ -2), 2, mean)
+error5 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF5, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r5 <- error5 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
 
 
-r <- as_tibble(rbind(r1,r2,r3))
-r$MAF <- sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
-r %>% rename(c("proposed" = "P","oracle" = "oracle_p")) %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(MAF,Error,color = Type)) + geom_line() + ylab("Type I Error") + geom_hline(aes(yintercept = 0.05))
+#6:
+error6 <- Compare_Aggreg_power(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, b0 = -1,bE = 0.3, bG = 0.8, bint1 = 0, sigmaE = 1,sigma_eps = 1, measure_error_percentage = 1/4)
+r6 <- error6 %>% summarise(proposed = mean(proposed <=0.05), oracle = mean(oracle <= 0.05), oracle_error = mean(oracle_error<= 0.05))
+
+
+
+r <- as_tibble(rbind(r1,r2,r3,r4,r5,r6))
+r$MAF <- sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)])
+r_plot <- r %>% rename(c("proposed" = "proposed","oracle" = "oracle")) %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% mutate(Type = factor(Type))
+levels(r_plot$Type) <- c("with_E","with_E_error", "without_E")
+r_plot %>% ggplot(aes(MAF,Error,color = Type)) + geom_line() + ylab("Type I Error") + geom_hline(aes(yintercept = 0.05))
 
 
 ```
@@ -756,19 +779,23 @@ r %>% rename(c("proposed" = "P","oracle" = "oracle_p")) %>% pivot_longer(propose
 The above plot shows the relationship between the observed type I error rate (assuming significance level of 5 percent) with the MAF of the `casual` gene in the underlying model. Next, we can take a look into the relationship between MAF (of non-casual genes) and the observed type I error rate:
 
 ```{r}
-all_error <- as_tibble(error3<=0.05)
-all_error <- all_error %>% mutate(MAF = MAF[!POS_using %in% c(POS_EFF5)])
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.2","0.05-0.1")
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.3", all_error$MAF_level)
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.4", all_error$MAF_level)
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.4, "0.4-0.5", all_error$MAF_level)
+all_error <- r
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.15","0.05-0.1")
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.15, "0.15-0.2", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.25", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.25, "0.25-0.3", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.5", all_error$MAF_level)
 
 
-all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed = mean(P), oracle = mean(oracle_p), oracle_error = mean(oracle_error), number = n())
+all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed = mean(proposed), oracle = mean(oracle), oracle_error = mean(oracle_error), number = 2000*n())
 
 all_error <- all_error %>% mutate(upper = 0.05 + 3*sqrt(0.05*0.95/number), lower = 0.05 - 3*sqrt(0.05*0.95/number))
 
-all_error %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+all_error_plot <- all_error %>% pivot_longer(proposed:oracle_error, "Type", values_to = "Error") %>% mutate(Type = factor(Type))
+levels(all_error_plot$Type) <- c("with_E","with_E_error", "without_E")
+
+all_error_plot %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+
 
 ```
 
@@ -828,10 +855,10 @@ Compare_Aggreg_type1_error_auxiliary <- function(sample = 500, G_using, POS_usin
     for (i in 1:length(samp_col)) {
       Gi <- G_using[,samp_col[i]]
       if(length(unique(Gi)) != 3){
-        p_vals_P1[i] <- 1
-        p_vals_P2[i] <- 1
-        p_vals_P3[i] <- 1
-        p_vals_P0[i] <- 1
+        p_vals_P1[i] <- -1
+        p_vals_P2[i] <- -1
+        p_vals_P3[i] <- -1
+        p_vals_P0[i] <- -1
       }
       else{
         modi <- glm(case_new ~ factor(Gi)*Z, family = binomial(link = "probit"))
@@ -859,8 +886,8 @@ Here we repeat the same procedure on the 1kGP data set, assuming that there is o
 
 ```{r}
 set.seed(123,sample.kind="Rounding")
-ind.excl <- snp_indLRLDR(infos.chr = CHR,infos.pos = POS)
-indx <- snp_clumping(G,infos.chr = CHR, infos.pos = POS, thr.r2 = 0.01, exclude = ind.excl)
+indx <- 1:ncol(G)
+
 G_using <- G[,indx]
 CHR_using <- CHR[indx]
 POS_using <- POS[indx]
@@ -871,15 +898,19 @@ p <- 1
 ### Need to make sure that all genotypes have enough frequencies in the selected genes:
 freq_counts <- big_counts(G,ind.col = indx)
 MAF <- snp_MAF(G,ind.col = indx)
-Qualified <- freq_counts[3,] >= 200 & MAF>=0.3
+Qualified <- freq_counts[3,] >= 50 & MAF>=0.3
 POS_EFF <- sample(POS_using[Qualified], size = 1)
+Qualified_2 <- freq_counts[3,] >= 50
+G_using <- G[,Qualified_2]
+CHR_using <- CHR[Qualified_2]
+POS_using <- POS[Qualified_2]
 
 
 ### Randomly sample 1/2 genes with strong effects and 1/2 genes with weak effects
 b0 <- -1
 bG <- 0.8
-bint <- 0.4
-bE <- 0.2
+bint <- 0.8
+bE <- 0.1
 bZ <- 0.3
 
 ### Generate the underlying environment variable:
@@ -906,13 +937,13 @@ for (i in 1:ncol(G_using)) {
   
   if(length(unique(Gi)) != 3){
     waldstats_P1[i] <- 0
-    p_vals_P1[i] <- 1
+    p_vals_P1[i] <- -1
   }
   else{
     modi <- glm(case_new ~ factor(Gi)*Z, family = binomial(link = "probit"))
     if(any(is.na(modi$coefficients))){
       waldstats_P1[i] <- 0
-      p_vals_P1[i] <- 1
+      p_vals_P1[i] <- -1
       
     }
     else{
@@ -922,7 +953,7 @@ for (i in 1:ncol(G_using)) {
   }
 }
 
-result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[Qualified_2], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
 manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
 qq(na.omit(result_P_INT)$P)
 hist(result_P_INT$P, breaks = 30)
@@ -936,6 +967,7 @@ hist(result_P_INT$P, breaks = 30)
 
 
 Here we consider the following parameter specification:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.2,\gamma=0.4, \beta_Z=0.8$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -988,11 +1020,15 @@ power5 <- apply(power5, MARGIN = 2, FUN = mean)
 suppressWarnings(power6 <- Compare_Aggreg_power_auxiliary(k = 200, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, sigma_eps = 0.5, sigmaE = 1))
 power6 <- power6 <= 5 * (10 ^ -8)
 power6 <- apply(power6, MARGIN = 2, FUN = mean)
+
 ## Table:
 power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
 kableExtra::kable(power,caption = "Comparison of Power")
 ## Figure:
-power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
+
+power_plot <- power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% mutate(Type = factor(Type))
+levels(power_plot$Type) <- c("with_E","with_E_error", "without_E_1df", "without_E_3df")
+power_plot %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
 ```
 
 In this parameter setting, we can see that even though with the help from the auxiliary variable `z`, the power is increased significantly. The proposed methods still in generally have much lower power than the oracle method using information of `E`, regardless whether there is measurement error in `E`. 
@@ -1031,7 +1067,9 @@ power6 <- apply(power6, MARGIN = 2, FUN = mean)
 power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
 kableExtra::kable(power,caption = "Comparison of Power")
 ## Figure:
-power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
+power_plot <- power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% mutate(Type = factor(Type))
+levels(power_plot$Type) <- c("with_E","with_E_error", "without_E_1df", "without_E_3df")
+power_plot %>% ggplot(aes(MAF,Power,color = Type)) + geom_line()
 ```
 
 From the plot above, we can notice that the difference becomes smaller as $\gamma$ gets larger.
@@ -1044,6 +1082,7 @@ From the plot above, we can notice that the difference becomes smaller as $\gamm
 ### Type I error Comparison:
 
 Still consider the setting:
+
 - $\beta_0= -1, \beta_G=0.8, \beta_E= 0.2,\gamma=0.8, \beta_Z=0.8$
 - $E \sim N(0,1)$
 - $\epsilon \sim N(0,0.5)$
@@ -1051,43 +1090,58 @@ Now, we aim to compare the type I error rate of these procedures at different MA
 
 
 ```{r}
-set.seed(123)
+set.seed(123,sample.kind="Rounding")
 
+### Sample three casual genes, corresponding to different MAF
 ### Sample three casual genes, corresponding to different MAF
 freq_counts <- big_counts(G,ind.col = indx)
 MAF <- snp_MAF(G,ind.col = indx)
 Qualified <- freq_counts[3,] >= 30 & MAF>=0.05 & MAF<=0.1
 POS_EFF1 <- sample(POS_using[Qualified], size = 1)
-Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
+Qualified <- freq_counts[3,] >= 50 & MAF>=0.1 & MAF<=0.15
 POS_EFF2 <- sample(POS_using[Qualified], size = 1)
-Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.15 & MAF<=0.2
 POS_EFF3 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 80 & MAF>=0.2 & MAF<=0.25
+POS_EFF4 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.25 & MAF<=0.3
+POS_EFF5 <- sample(POS_using[Qualified], size = 1)
+Qualified <- freq_counts[3,] >= 100 & MAF>=0.3
+POS_EFF6 <- sample(POS_using[Qualified], size = 1)
 
 ### show their corresponding MAF:
 sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
 
+suppressWarnings(power1 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power1 <- power1 <= 5 * (10 ^ -2)
+power1 <- apply(power1, MARGIN = 2, FUN = mean)
 
-### Compute type I error rate of each case:
-#1:
-suppressWarnings(error1 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF1, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
-r1 <- error1 %>% filter(BP != POS_EFF1) %>% select(proposed_1:oracle_error)
-r1 <- apply(r1<= 5 * (10 ^ -2), 2, mean)
+suppressWarnings(power2 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power2 <- power2 <= 5 * (10 ^ -2)
+power2 <- apply(power2, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power3 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power3 <- power3 <= 5 * (10 ^ -2)
+power3 <- apply(power3, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power4 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF4, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power4 <- power4 <= 5 * (10 ^ -2)
+power4 <- apply(power4, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power5 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF5, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power5 <- power5 <= 5 * (10 ^ -2)
+power5 <- apply(power5, MARGIN = 2, FUN = mean)
+
+suppressWarnings(power6 <- Compare_Aggreg_power_auxiliary(k = 2000, G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF6, sigma_eps = 0.5, sigmaE = 1, bint1 = 0))
+power6 <- power6 <= 5 * (10 ^ -2)
+power6 <- apply(power6, MARGIN = 2, FUN = mean)
+## Table:
+power <- as_tibble(as.matrix(rbind(power1,power2,power3, power4,power5,power6))) %>% mutate(MAF = sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3,POS_EFF4,POS_EFF5,POS_EFF6)]))
 
 
-#3:
-suppressWarnings(error2 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF2, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
-r2 <- error2 %>% filter(BP != POS_EFF2) %>% select(proposed_1:oracle_error)
-r2 <- apply(r2<=5 * (10 ^ -2), 2, mean)
-
-#5:
-suppressWarnings(error3 <- Compare_Aggreg_type1_error_auxiliary(G_using = G_using, POS_using = POS_using, effective_gene = POS_EFF3, bE = 0.2, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5, MAF = MAF))
-r3 <- error3 %>% filter(BP != POS_EFF3) %>% select(proposed_1:oracle_error)
-r3 <- apply(r3<=5 * (10 ^ -2), 2, mean)
-
-
-r <- as_tibble(rbind(r1,r2,r3))
-r$MAF <- sort(MAF[POS_using %in% c(POS_EFF1,POS_EFF2,POS_EFF3)])
-r %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(MAF,Error,color = Type)) + geom_line() + ylab("Type I Error") + geom_hline(aes(yintercept = 0.05))
+power_plot <- power %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Power") %>% mutate(Type = factor(Type))
+levels(power_plot$Type) <- c("with_E","with_E_error", "without_E_1df", "without_E_3df")
+power_plot %>% ggplot(aes(MAF,Power,color = Type)) + geom_line() + ylab("Error Rate")
 ```
 
 
@@ -1095,35 +1149,32 @@ Here we pick the last set of simulation (with the MAF of casual gene being 0.42)
 
 
 ```{r}
-all_error <- error3 %>% mutate(proposed_1 = proposed_1<=0.05, proposed_2 = proposed_2<=0.05, oracle_p = oracle_p<=0.05, oracle_error = oracle_error<=0.05)
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.2","0.05-0.1")
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.3", all_error$MAF_level)
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.4", all_error$MAF_level)
-all_error$MAF_level <- ifelse(all_error$MAF >= 0.4, "0.4-0.5", all_error$MAF_level)
+all_error <- power
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.1, "0.1-0.15","0.05-0.1")
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.15, "0.15-0.2", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.2, "0.2-0.25", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.25, "0.25-0.3", all_error$MAF_level)
+all_error$MAF_level <- ifelse(all_error$MAF >= 0.3, "0.3-0.5", all_error$MAF_level)
 
 
-all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed_1 = mean(proposed_1), proposed_2 = mean(proposed_2), oracle = mean(oracle_p), oracle_error = mean(oracle_error), number = n())
+all_error <- all_error %>% group_by(MAF_level) %>% summarise(proposed_1 = mean(proposed_1),proposed_2 = mean(proposed_2), oracle = mean(oracle), oracle_error = mean(oracle_error), number = 2000*n())
 
 all_error <- all_error %>% mutate(upper = 0.05 + 3*sqrt(0.05*0.95/number), lower = 0.05 - 3*sqrt(0.05*0.95/number))
 
-all_error %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+all_error %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3, alpha = 1) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+
+
+all_error_plot <- all_error %>% pivot_longer(proposed_1:oracle_error, "Type", values_to = "Error") %>% mutate(Type = factor(Type))
+levels(all_error_plot$Type) <- c("with_E","with_E_error", "without_E_1df", "without_E_3df")
+
+all_error_plot %>% ggplot(aes(factor(MAF_level))) + geom_point(aes(y = Error, color = Type), size = 3) + geom_hline(aes(yintercept = 0.05)) +  geom_pointrange(aes(y = 0.05, ymin = lower, ymax = upper), size = 0.1)
+
+
 
 ```
 
 
-Based on the above plot, all the procedures have type I error rate in the expected range, regardless of the MAF level.
-
-
-
-```{r}
-error3$MAF_level <- ifelse(error3$MAF >= 0.1, "0.1-0.2","0.05-0.1")
-error3$MAF_level <- ifelse(error3$MAF >= 0.2, "0.2-0.3", error3$MAF_level)
-error3$MAF_level <- ifelse(error3$MAF >= 0.3, "0.3-0.4", error3$MAF_level)
-error3$MAF_level <- ifelse(error3$MAF >= 0.4, "0.4-0.5", error3$MAF_level)
-error3 %>% pivot_longer(proposed_1:oracle_error, names_to = "Type", values_to = "p_value") %>% ggplot(aes(x = p_value, fill = Type)) + geom_histogram(bins = 5) + facet_grid(~MAF_level)
-```
-
-
+Based on the above plot, all the procedures have type I error rate in the expected range, when the MAF level is larger than 0.1.
 
 
 
