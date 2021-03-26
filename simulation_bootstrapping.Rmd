@@ -1,0 +1,176 @@
+---
+title: "Non additive interation"
+author: "Ziang Zhang"
+date: "3/25/2021"
+output: 
+  pdf_document:
+    keep_tex: true
+    number_sections: true
+    fig_caption: yes
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, dev = 'png', message = F, warning = F)
+library(tidyverse)
+library(lme4)
+library(bigsnpr)
+library(bigstatsr)
+library(dplyr)
+library(nlme)
+library(aod)
+library(qqman)
+library(foreach)
+library(doParallel)
+```
+
+
+
+
+```{r include=FALSE}
+Interaction_Test <- function(G, b0, bG, gam1, gam2, bE, sig, sigmaE, K, measure_error_percentage = 1/4){
+p_vals_Prop <- c()
+p_vals_withE <- c()
+p_vals_withE_error <- c()
+### repetition for K times:
+for (i in 1:K) {
+  ### Generate the underlying environment variable:
+  E <- rnorm(n = length(G), sd = sigmaE)
+  E2 <- E + rnorm(n = length(G), sd = sigmaE * sqrt(measure_error_percentage))
+  ### Generate the latent variable, assume the first gene is causal
+  y_lat <- b0 + bG*G + bE*E + gam1*E*ifelse(G == 1, 1,0) + gam2*E*ifelse(G == 2, 1,0) + rnorm(n = length(G), sd = sig)
+  case_new <- ifelse(y_lat > 0, 1, 0)
+  modi <- glm(case_new ~ factor(G), family = binomial(link = "probit"))
+  oracle <- glm(case_new ~ G*E, family = binomial(link = "probit"))
+  oracle_error <- glm(case_new ~ G*E2, family = binomial(link = "probit"))
+  p_vals_withE_error[i] <- summary(oracle_error)$coefficient[4,4]
+  p_vals_Prop[i] <- as.numeric(wald.test(vcov(modi)[-1,-1], b = modi$coefficients[-1], H0 = matrix(0,nrow = 1,ncol = 1), L = matrix(c(2,-1),nrow = 1))$result$chi2[3])
+  p_vals_withE[i] <- summary(oracle)$coefficient[4,4]
+}
+tibble(proposed = p_vals_Prop, withE = p_vals_withE, withError = p_vals_withE_error)
+}
+
+```
+
+
+
+
+# The Underlying Model:
+
+In the first simulation study, we consider the following additive probit model with non additive interaction: $$Y^* = \beta_0+\beta_GG + \beta_EE + \gamma_1I(G=1)*E+\gamma_2I(G=2)*E + \epsilon$$
+where $\epsilon\sim N(0,\sigma^2)$ for some \textbf{known} $\sigma^2$.
+
+This model is more general than the model with additive interaction effect. When the interaction effect between $G$ and $E$ is actually additive, we should have $2\gamma_1 = \gamma_2$. Here our main interest will be testing the null hypothesis $$H_0:\gamma_1=\gamma_2=0$$ without the information of $E$.
+
+Similar to the previous situation, the presence of term $\gamma_1,\gamma_2$ breaks the homoskedasiticiy assumption on $Var(Y^*|G)$, and hence result in a genotypic probit model (instead of the additive model) $$Y^* = \tilde{\gamma_0}+ \tilde{\gamma_1}I(G=1)+\tilde{\gamma_2}I(G=2)+ \tilde{\epsilon}$$ We will utilize the non-linearity test to test $H_0:2\tilde{\gamma_1}= \tilde{\gamma_2}$.
+
+
+
+
+# Simulation :
+
+
+## An example when the interaction effect is additive:
+
+```{r}
+### Read in data:
+path <- "D:/gwas-practice/indep_QC.bed"
+tmpfile  <- tempfile()
+snp_readBed(path, backingfile = tmpfile)
+obj.bigSNP <- snp_attach(paste0(tmpfile , ".rds"))
+
+G   <- obj.bigSNP$genotypes
+CHR <- obj.bigSNP$map$chromosome
+POS <- obj.bigSNP$map$physical.pos
+
+### Randomly Sample p genes
+set.seed(123,sample.kind="Rounding")
+p <- 5
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G)
+MAF <- snp_MAF(G)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.3
+indx <- which(POS %in% sample(POS[Qualified], size = p))
+G_use <- G[,indx]
+POS_use <- POS[indx]
+CHR_use <- CHR[indx]
+### Do the bootstrapping:
+bootsize <- 5000
+G_boot <- G_use[sample(1:nrow(G_use), bootsize, replace=TRUE), ]
+
+### Specify a set of parameter, Compute power:
+b0 <- -1
+bG <- 0.3
+gam1 <- 0.3
+gam2 <- 0.6
+bE <- 0.3
+sig <- 1
+sigmaE <- 1
+measure_error_percentage <- 1/4
+power <- Interaction_Test(G = G_boot[,1], b0, bG, gam1, gam2, bE, sig, sigmaE, K = 10000, measure_error_percentage = 1/4)
+apply(as.matrix(power)<=0.05, 2, mean)
+power %>% pivot_longer(proposed:withError, values_to = "P", names_to = "type") %>% ggplot(aes(P)) + geom_histogram(bins = 20) + facet_grid(~type)
+```
+
+
+
+
+
+## An example when the interaction effect is non-additive:
+
+
+```{r, message=FALSE, warning=FALSE}
+### Randomly Sample p genes
+set.seed(123,sample.kind="Rounding")
+p <- 5
+### Need to make sure that all genotypes have enough frequencies in the selected genes:
+freq_counts <- big_counts(G)
+MAF <- snp_MAF(G)
+Qualified <- freq_counts[3,] >= 200 & MAF>=0.3
+indx <- which(POS %in% sample(POS[Qualified], size = p))
+G_use <- G[,indx]
+POS_use <- POS[indx]
+CHR_use <- CHR[indx]
+### Do the bootstrapping:
+bootsize <- 5000
+G_boot <- G_use[sample(1:nrow(G_use), bootsize, replace=TRUE), ]
+
+### Specify a set of parameter, Compute power:
+b0 <- -1
+bG <- 0.3
+gam1 <- 0.3
+gam2 <- 0
+bE <- 0.3
+sig <- 1
+sigmaE <- 1
+measure_error_percentage <- 1/4
+power <- Interaction_Test(G = G_boot[,1], b0, bG, gam1, gam2, bE, sig, sigmaE, K = 10000, measure_error_percentage = 1/4)
+apply(as.matrix(power)<=0.05, 2, mean)
+power %>% pivot_longer(proposed:withError, values_to = "P", names_to = "type") %>% ggplot(aes(P)) + geom_histogram(bins = 20) + facet_grid(~type)
+```
+
+
+
+## Study of Type I error rate:
+
+
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(123,sample.kind="Rounding")
+bootsize <- 5000
+G_boot <- G_use[sample(1:nrow(G_use), bootsize, replace=TRUE), ]
+
+### Specify a set of parameter, compute Type I error rate
+b0 <- -1
+bG <- 0.3
+gam1 <- 0
+gam2 <- 0
+bE <- 0.3
+sig <- 1
+sigmaE <- 1
+measure_error_percentage <- 1/4
+error <- Interaction_Test(G = G_boot[,1], b0, bG, gam1, gam2, bE, sig, sigmaE, K = 10000, measure_error_percentage = 1/4)
+apply(as.matrix(error)<=0.05, 2, mean)
+error %>% pivot_longer(proposed:withError, values_to = "P", names_to = "type") %>% ggplot(aes(P)) + geom_histogram(bins = 30) + facet_grid(~type) + xlim(0,1)
+```
+

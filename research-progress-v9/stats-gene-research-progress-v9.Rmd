@@ -63,7 +63,7 @@ Therefore, the regression model can be written as:
 \begin{equation}\label{eqn:probitModelLinearity2}
 \begin{aligned}
 \Phi^{-1}\bigg(\text{P}(Y=1|G,Z)\bigg) &= \frac{\text{E}(Y^* |G,Z)}{\sqrt{\text{Var}(Y^* |G,Z)}} \\
-                                       &= \beta_0 +\beta_{G1} I(G = 1) + +\beta_{G2} I(G = 2) + \beta_Z Z \\
+                                       &= \beta_0 +\beta_{G1} I(G = 1) + \beta_{G2} I(G = 2) + \beta_Z Z \\
 \end{aligned}
 \end{equation}
 
@@ -416,7 +416,7 @@ for (i in 1:ncol(G_using)) {
   }
 }
 
-result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[indx], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1) %>% filter(P > 0)
 
 
 
@@ -499,6 +499,7 @@ POS_using <- POS[indx]
 
 ### Let's repeat for 30 times
 result <- Proposed_Aggreg(k = 10, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.8, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
+result <- result %>% filter(P > 0)
 manhattan(result, highlight = obj.bigSNP$map$marker.ID[indx][which(POS_using == POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
 qq(na.omit(result)$P)
 hist(result$P, breaks = 30)
@@ -533,7 +534,8 @@ set.seed(123,sample.kind="Rounding")
 
 ### Let's repeat for 30 times
 result <- Proposed_Aggreg(k = 50, SNP_names = obj.bigSNP$map$marker.ID[indx], Gusing = G_using, POS_using = POS_using, CHR_using = CHR_using, effective_gene = POS_EFF, bE = 0.3, bint = 0.5, bG = 0.8, sigmaE = 1, sigma_eps = 0.5)
-manhattan(result, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
+result <- result %>% filter(P > 0)
+
 qq(na.omit(result)$P)
 hist(result$P, breaks = 30)
 
@@ -953,7 +955,7 @@ for (i in 1:ncol(G_using)) {
   }
 }
 
-result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[Qualified_2], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1)
+result_P_INT <- tibble(SNP = obj.bigSNP$map$marker.ID[Qualified_2], CHR = CHR_using, BP = POS_using , stats = waldstats_P1, P = p_vals_P1) %>% filter(P > 0)
 manhattan(result_P_INT, highlight = result_P_INT$SNP[which(POS_using %in% POS_EFF)], suggestiveline = FALSE, genomewideline = -log10(5 * (10 ^ -8)))
 qq(na.omit(result_P_INT)$P)
 hist(result_P_INT$P, breaks = 30)
@@ -977,6 +979,11 @@ The $G_k$ will be sampled for six times, with different levels of MAF in each ti
 
 ```{r}
 set.seed(123,sample.kind="Rounding")
+indx <- 1:ncol(G)
+
+G_using <- G[,indx]
+CHR_using <- CHR[indx]
+POS_using <- POS[indx]
 
 ### Sample three casual genes, corresponding to different MAF
 freq_counts <- big_counts(G,ind.col = indx)
