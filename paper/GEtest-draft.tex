@@ -29,8 +29,8 @@
 \maketitle
 
 \begin{abstract}
-In genomoe-wide association studies (GWAS), it is desirable to include and test the interaction effect (GxE)  between single-nucleotide polymorphism (SNP,G) and enviromental variable (E), in order to achieve higher power for the detection of causal SNPs. However, accounting for this interaction effect through direct testing is infeasible in most studies, becasue the information on environmental variable E is not not availiable or is collected with non-trivial amount of measurement errors. On the other hand, indirect testing method allows this  interaction effect to be detected and hence accounted without using the information of E. For quantative traits (Y) that are approximately normally distributed, it has been shown that indirect testing on GxE interaction can be done by testing the heterokedasticity of Y between genotypes. 
-Therefore, screening out SNPs with strong signal of heteroskedasticy helps to identify potential causal SNPs that should be studied in more detailed follow-up analysis, when the traits are quantative. However, when traits are binary, the existing methodology based on testing for the heteroskedasticity between genotypes cannot be generalized for the same problem. In this paper, we proposed a novel methodology for indrect testing of  (GxE)  interaction effect for binary traits. Through extensive simulation studies using the 1000 Genome Project (1kGP) dataset, we will show that the proposed approach has well-controlled type I error rate, and has satisfactory power when compared to the direct testing method. In the end, we will  illustrate the use of the proposed method by applying it on the UK biobank dataset for a GWAS study.
+In genome-wide association studies (GWAS), it is desirable to include and test the interaction effect (GxE) between single-nucleotide polymorphism (SNP,G) and environmental variable (E), to achieve higher power for the detection of causal SNPs. However, accounting for this interaction effect through direct testing is infeasible in most studies, because the information on environmental variable E is not available or is collected with a non-trivial amount of measurement errors. On the other hand, the indirect testing method allows this interaction effect to be detected and hence accounted for without using the information of E. For quantitative traits (Y) that are approximately normally distributed, it has been shown that indirect testing on GxE interaction can be done by testing the heteroskedasticity of Y between genotypes.
+Therefore, screening out SNPs with strong signal of heteroskedasticity helps to identify potential causal SNPs that should be studied in a more detailed follow-up analysis, when the traits are quantitative. However, when traits are binary, the existing methodology based on testing for the heteroskedasticity between genotypes cannot be generalized for the same problem. In this paper, we proposed a novel methodology for indirect testing of (GxE) interaction effect for binary traits. Through extensive simulation studies using the 1000 Genome Project (1kGP) dataset, we will show that the proposed approach has a well-controlled type I error rate, and satisfactory power compared to the direct testing method. In the end, we will illustrate the use of the proposed method by applying it to the UK biobank dataset for a GWAS study.
 \end{abstract}
 
 \doublespacing
@@ -47,6 +47,7 @@ Therefore, screening out SNPs with strong signal of heteroskedasticy helps to id
 \input{sections/05-UKbiobank-draft01}
 \input{sections/06-discussion-draft01}
 \bibliographystyle{apalike}
+\newpage
 \bibliography{bibliography}
 
 

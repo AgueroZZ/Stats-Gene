@@ -29,13 +29,13 @@ Where the parameters $\gamma_0$, $\gamma_1$ and $\gamma_2$ are defined as
 \gamma_2 &= \frac{\E(Y^*|G=2)}{\V(Y^*|G=2)} = \frac{\beta_0 + \beta_E \mu_E + 2(\beta_G+\beta_{GE}\mu_E)}{\sqrt{((\beta_E + 2\beta_{GE})^2 \sigma_E^2 + \sigma_\epsilon^2)}} - \gamma_0 \\
 \end{aligned}
 \end{equation}
-Notice that this model is still a valid probit model, but the effect of SNP $G$ changes from additive to genotypic. If $\gamma_1 = 0.5 \gamma_2$, then the simplied probit model is still additive in $G$, but that will only happen when $\beta_{GE} = 0$.
+Notice that this model is still a valid probit model, but the effect of SNP $G$ changes from additive to genotypic. If $\gamma_1 = 0.5 \gamma_2$, then the simplified probit model is still additive in $G$, but that will only happen when $\beta_{GE} = 0$.
 
-Therefore, when the effect of $G$ on $Y^*$ is additive, testing the hypothesis $\gamma_1 = 0.5 \gamma_2$ is equivalent to testing $\beta_{GE} = 0$. Although in model \ref{equ:latentgenerating1}, both the $G$ and its interaction with $E$ are assumed to affect $Y^*$ additively, this method will still work if the interaction effect between $G$ and $E$ is non-additive.
+Therefore, when the effect of $G$ on $Y^*$ is additive, testing the hypothesis $\gamma_1 = 0.5 \gamma_2$ is equivalent to testing $\beta_{GE} = 0$. Although in model \ref{equ:latentgenerating1}, both $G$ and its interaction with $E$ are assumed to affect $Y^*$ additively, this method will still work if the interaction effect between $G$ and $E$ is non-additive.
 
 \subsection{Testing based on the auxiliary variable}
 
-In this section, we assume that there exists an auxiliary variable $Z$ in the true generating model, in other words, model \ref{equ:latentgenerating1} can be written as:
+In this section, we assume that there exists an auxiliary variable $Z$ in the true generating model, so the latent model \ref{equ:latentgenerating1} can be written as:
 \begin{equation}\label{equ:latentaux}
 \begin{aligned}
 Y^* = \beta_0+\beta_GG + \beta_EE + \beta_{GE}GE + \beta_{Z}Z + \epsilon
@@ -44,7 +44,7 @@ Y^* = \beta_0+\beta_GG + \beta_EE + \beta_{GE}GE + \beta_{Z}Z + \epsilon
 The auxiliary variable $Z$ has to satisfy the following three properties:
 \begin{enumerate}\label{req:aux}
   \item Observations of $Z$ are availiable in the dataset.
-  \item $Z$ has no interaction with both the SNP of interest $G$ and the environmental variable $E$
+  \item $Z$ has no interaction with the SNP of interest $G$
   \item Z is independent of the random error $\epsilon$
 \end{enumerate}
 Given such an auxiliary variable $Z$ exists in the dataset, then the conditional probability $\text{P}(Y=1|G,Z)$ can be written as the following:
@@ -63,11 +63,10 @@ The parameters $\gamma_0,\gamma_1,\gamma_2$ are the same as in equations \ref{eq
 \gamma_{Z1G} &= \frac{\beta_Z}{\sqrt{(\beta_E + 2\beta_{GE})^2 \sigma_E^2 + \sigma_\epsilon^2}} - \frac{\beta_Z}{\sqrt{\beta_E^2 \sigma_E^2 + \sigma_\epsilon^2}}\\
 \end{aligned}
 \end{equation}
-Assuming that $\beta_Z \neq 0$, the equation above shows that a non-zero missing interaction ($\beta_{GE}$) creates an \textit{artificial} non-additive interaction between the auxiliary variable $Z$ and the genotypes of the SNP of interest $G$.
+Assuming that $\beta_Z \neq 0$, the equation above shows that a missing interaction (GxE) creates an \textit{artificial} non-additive interaction between the auxiliary variable $Z$ and the genotypes of the SNP of interest $G$.
 
-Therefore, if an auxiliary variable $Z$ exists and is known to satisfy the three requirements in \ref{req:aux} and with potentially non-zero $\beta_Z$, one can also test the hypothesis $\gamma_{Z1G} = \gamma_{Z2G} = 0$ in order to test $\beta_{GE} = 0$. Note that although it is assumed in model \ref{equ:latentaux} that $G$ has additive effect $\beta_G$, it is clear that this methodology will still hold if $G$ has non-additive effect or if $GE$ interaction is non-additive.
+Therefore, if an auxiliary variable $Z$ exists and is known to satisfy the three requirements in \ref{req:aux} with non-zero $\beta_Z$, one can also test the hypothesis $\gamma_{Z1G} = \gamma_{Z2G} = 0$ in order to test $\beta_{GE} = 0$. Although it is assumed in model \ref{equ:latentaux} that $G$ has additive effect $\beta_G$, it is clear that this methodology will still hold if $G$ has non-additive effect or if GxE interaction is non-additive.
 
-If it is already known that the effect of $G$ should be coded additively in the model, then the above methodology can be incorporated into the methodology of testing additivity proposed in section \ref{subsec:m1}, by jointly testing the null hypothesis $$ H_0: \gamma_1 = 0.5 \gamma_2, \gamma_{Z1G} = \gamma_{Z2G} = 0$$ This will boost the power of detecting non-zero interaction $\beta_{GE}$, by both reducing the variance of random error $\epsilon$ and checking whether there are psedo interactions between $Z$ and $G$ created by the missing $GE$ interaction.
+If it is already known that the effect of $G$ should be coded additively in the model, then the above methodology can be incorporated into the methodology of testing additivity proposed in section \ref{subsec:m1}, by jointly testing the null hypothesis $$ H_0: \gamma_1 = 0.5 \gamma_2, \gamma_{Z1G} = \gamma_{Z2G} = 0$$ This will boost the power of detecting non-zero interaction $\beta_{GE}$, by both reducing the variance of random error $\epsilon$ and checking whether there are pseudo interactions between $Z$ and $G$ created by the missing GxE interaction.
 
-In the rest of this paper, all the hypothesis described at above will be tested through Wald test. That means, method of testing additivity proposed in section \ref{subsec:m1} will be using a one degree of freedom Chi-square test, method based on auxiliary variable proposed earlier at this section will be using a two degrees of freedom Chi-square test, and their combination will be using a three degrees of freedom Chi-square test.
-
+In the rest of this paper, all the hypotheses described above will be tested through the Wald test. That means, method of testing additivity proposed in section \ref{subsec:m1} will be using one degree of freedom Chi-Square test, the method based on auxiliary variable proposed earlier in this section will be using two degrees of freedom Chi-Square test, and their combination will be using three degrees of freedom Chi-Square test.
