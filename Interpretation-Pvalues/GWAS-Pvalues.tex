@@ -36,7 +36,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-  pdftitle={P values of GWAS studies in different populations},
+  pdftitle={Note on combining p values of GWAS studies from different populations},
   pdfauthor={Ziang Zhang},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
@@ -115,7 +115,8 @@
 \usepackage{makecell}
 \usepackage{xcolor}
 
-\title{\textbf{P values of GWAS studies in different populations}}
+\title{\textbf{Note on combining p values of GWAS studies from different
+populations}}
 \author{Ziang Zhang}
 \date{4/17/2021}
 
@@ -126,11 +127,36 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Var}{\text{Var}}
 
+\hypertarget{introduction}{%
+\section{Introduction:}\label{introduction}}
+
+For most traits,genetic effects from specific SNP only have small effect
+sizes(Evangelou and Ioannidis 2013). Therefore, practitioners often
+aggregate the GWAS results from different population through different
+kinds of meta-analysis methods in order to achieve higher power.
+Aggregation through P values is a commonly used example of meta-analysis
+method. For example when there are several different datasets,
+practitioners sometimes will first carry out a comprehensive study using
+one dataset, and only study the SNPs with highest significance levels in
+the rest datasets (Begum et al. 2012). Hence, we would like to consider
+when such procedure will no longer be valid in this note.
+
+In this note, by examining the power and distribution of P values of
+Wald test, we conclude that the same hypothesis test on different
+populations can have very different P values under the alternative
+hypothesis, hence power, even when there is no heterogeneity on the true
+SNP effect and the covariates among the two populations.
+
+In next section, we will give a brief overview of Wald tests for
+Generalized Linear Models, and a short explanation of the rationale
+behind this phenomenon. Then, we will follow with two simulation studies
+to illustrate how this phenomenon occurs for binary trait.
+
 \hypertarget{wald-test-for-generalized-linear-models}{%
 \section{Wald test for Generalized Linear
 Models:}\label{wald-test-for-generalized-linear-models}}
 
-Assume the generalized linear models (glm) has the following form:
+Assume the generalized linear model (glm) has the following form:
 \[\mathbb{E}(Y|X) = \mu = g^{-1}(\beta_0 + \beta_1 X_1 + \beta_2X_2) = g^{-1}(\eta),\]
 where \(g(.)\) is a specific link function connecting the linear
 predictor \(\eta\) with the mean function of \(Y\). In this case, the
@@ -150,22 +176,20 @@ estimator. Under the null hypothesis, \(T\) asymptotically follows a
 Chi-Square distribution with 1 degree of freedom.
 
 Under the alternative hypothesis that
-\(\beta_3 = \tilde{\beta}_3 \neq 0\), the non-centrality parameter of
+\(\beta_2 = \tilde{\beta}_2 \neq 0\), the non-centrality parameter of
 Wald test above can be computed as
-\[I_n^{-1}(\tilde{\beta})_{[3,3]}\tilde{\beta}_3^2,\] where
+\[I_n^{-1}(\tilde{\beta})_{[3,3]}\tilde{\beta}_2^2,\] where
 \(\tilde{\beta}\) is the vector of true values for the regression
 parameters \(\beta\). Since \(I_n^{-1}(\tilde{\beta})_{[3,3]}\) will not
-be solely a function of \(\tilde{\beta}_3\) unless \(g\) is identity,
+solely depend on \(\tilde{\beta}_2\) unless \(g\) is identity. Therefore
 the power function of this Wald test will not only depend on
-\(\tilde{\beta}_3\), but the whole vector \(\tilde{\beta}\).
+\(\tilde{\beta}_2\), but the whole vector \(\tilde{\beta}\).
 
 Define \(d=-\sqrt{I_n^{-1}(\tilde{\beta})_{[3,3]}}\tilde{\beta}_3\), the
 theoretical power of this Wald test at \(\tilde{\beta}\) can be computed
 as \[1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),\] where \(\Phi\) is the CDF of
 standard normal and \(z_{a/2}\) is the \(a/2\) quantile of standard
 normal.
-
-\clearpage
 
 \hypertarget{simulation-with-random-samples}{%
 \section{Simulation with random
@@ -176,7 +200,7 @@ independently on two populations (European, Asian), and question of
 interest is to study the association between the status of a particular
 disease (\(Y:0/1\)) and a particular SNP \(G\) with minor allele
 frequency (MAF) \(0.3\) under Hardy Weinberg Equilibrium (HWE), after
-controlling the effect of Z (\(Z\sim N(0,\sigma=3)\)).
+controlling the effect of a covariate Z (\(Z\sim N(0,\sigma=3)\)).
 
 Assume that GWAS study has been carried out for each population to test
 if the SNP \(G\) is causal for \(Y\), and the p-values are
@@ -286,13 +310,13 @@ G & ratio\\
 
 Based on the two tables above, we can notice that the case to control
 ratios are similar across the two populations. Furthermore, as we can
-expect, the genotype group with more copies of the minor allele has
+expect, the genotypic group with more copies of the minor allele has
 higher case to control ratio. In our simulation, the samples are
 randomly collected from the two populations. This strategy may not be
 appropriate if the disease prevalence is very low, in which samples
-collected in a case-control design will be more appropriate. We will
-consider the same problem for case-control study later, and for now just
-focus on the case when the sample is random.
+collected in a case-control design will be preferred. We will consider
+the same problem for case-control study later, and for now just focus on
+the case when the sample is random.
 
 We can use Wald test to test the hypothesis \(\beta_G = 0\) (i.e.~G is a
 casual SNP) in each population:
@@ -324,9 +348,10 @@ casual SNP) in each population:
 Note that the p-values are \(0.015\) for European population, and
 \(0.009\) for Asian population. It is typically expected that for the
 population with smaller p-value, the magnitude of the association
-(i.e.~\(\tilde{\beta}_G\)) should be larger. However, in this simulation
-example the true value of \(\beta_G\) is \(\tilde{\beta}_G\) for both
-populations, and even the covariates are exactly the same.
+(i.e.~\(|\tilde{\beta}_G|\)) should be larger. However, in this
+simulation example the true value of \(\beta_G\) is
+\(\tilde{\beta}_G=0.3\) for both populations, and even the covariates
+are exactly the same.
 
 \hypertarget{theoretical-power-and-empirical-power}{%
 \subsection{Theoretical Power and Empirical
@@ -499,8 +524,8 @@ for studies with Case-Control design, using a new simulation example.
 
 For the new simulation, we will continue to use the two data-generating
 models as in section 2. However, instead of using samples randomly
-simulated from the population, we are now randomly samples that are
-randomly sampled from case and control in the following way:
+simulated from the population, we are now randomly sampling from cases
+and controls in the following way:
 
 \begin{itemize}
 \tightlist
@@ -509,7 +534,7 @@ randomly sampled from case and control in the following way:
   size 3000 in the same way as in section 2.
 \item
   Secondly, among all the cases and controls in each population,
-  randomly sample 400 observations from cases and 600 observations from
+  randomly sample 500 observations from cases and 500 observations from
   controls.
 \item
   Finally, for each population, combine all the sampled cases and
@@ -529,8 +554,8 @@ randomly sampled from case and control in the following way:
 \NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
 \NormalTok{ylat_Eur <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaZ}\OperatorTok{*}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
 \NormalTok{y_Eur <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_Eur }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{Eur_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{600}\NormalTok{)}
-\NormalTok{Eur_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{400}\NormalTok{)}
+\NormalTok{Eur_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
+\NormalTok{Eur_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
 \NormalTok{EU_sample <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(Eur_cases,Eur_controls)}
 \NormalTok{mod_Eur <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(Y }\OperatorTok{~}\StringTok{ }\NormalTok{Z }\OperatorTok{+}\StringTok{ }\NormalTok{G,}\DataTypeTok{data =}\NormalTok{ EU_sample, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
 \KeywordTok{summary}\NormalTok{(mod_Eur)}\OperatorTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
@@ -538,7 +563,7 @@ randomly sampled from case and control in the following way:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.007485476
+## [1] 0.0001973326
 \end{verbatim}
 
 \begin{Shaded}
@@ -550,8 +575,8 @@ randomly sampled from case and control in the following way:
 \NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
 \NormalTok{ylat_As <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaZ}\OperatorTok{*}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
 \NormalTok{y_As <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_As }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{As_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{600}\NormalTok{)}
-\NormalTok{As_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{400}\NormalTok{)}
+\NormalTok{As_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
+\NormalTok{As_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
 \NormalTok{As_sample <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(As_cases,As_controls)}
 \NormalTok{mod_As <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(Y }\OperatorTok{~}\StringTok{ }\NormalTok{Z }\OperatorTok{+}\StringTok{ }\NormalTok{G,}\DataTypeTok{data =}\NormalTok{ As_sample, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
 \KeywordTok{summary}\NormalTok{(mod_As)}\OperatorTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
@@ -559,7 +584,7 @@ randomly sampled from case and control in the following way:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 5.679744e-26
+## [1] 3.561277e-33
 \end{verbatim}
 
 Using Wald test as before, we have p-value (\(5.679 \times 10 ^{-26}\))
@@ -589,8 +614,8 @@ before:
 \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{800}\NormalTok{) \{}
 \NormalTok{  ylat_Eur <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaZ}\OperatorTok{*}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
 \NormalTok{  y_Eur <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_Eur }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{  Eur_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{600}\NormalTok{)}
-\NormalTok{  Eur_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{400}\NormalTok{)}
+\NormalTok{  Eur_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
+\NormalTok{  Eur_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_Eur, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
 \NormalTok{  EU_sample <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(Eur_cases,Eur_controls)}
 \NormalTok{  mod_Eur <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(Y}\OperatorTok{~}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\NormalTok{G,}\DataTypeTok{data =}\NormalTok{ EU_sample, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
 \NormalTok{  p1[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod_Eur)}\OperatorTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
@@ -601,7 +626,7 @@ before:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.61
+## [1] 0.62125
 \end{verbatim}
 
 \begin{Shaded}
@@ -615,8 +640,8 @@ before:
 \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{800}\NormalTok{) \{}
 \NormalTok{  ylat_As <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaZ}\OperatorTok{*}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
 \NormalTok{  y_As <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_As }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{  As_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{600}\NormalTok{)}
-\NormalTok{  As_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{400}\NormalTok{)}
+\NormalTok{  As_controls <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
+\NormalTok{  As_cases <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{Y =}\NormalTok{ y_As, }\DataTypeTok{G =}\NormalTok{ G, }\DataTypeTok{Z =}\NormalTok{ Z) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Y }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_n}\NormalTok{(}\DecValTok{500}\NormalTok{)}
 \NormalTok{  As_sample <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(As_cases,As_controls)}
 \NormalTok{  mod_As <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(Y}\OperatorTok{~}\NormalTok{Z }\OperatorTok{+}\StringTok{ }\NormalTok{G,}\DataTypeTok{data =}\NormalTok{ As_sample, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
 \NormalTok{  p2[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod_As)}\OperatorTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
@@ -627,12 +652,12 @@ before:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.8625
+## [1] 0.865
 \end{verbatim}
 
 Again, as we have observed in section 2, the empirical powers of Wald
-test still differ a lot when we use case-control design (\(0.61\) in
-Europe and \(0.863\) in Asia). We can also see the distribution of
+test still differ a lot when we use case-control design (\(0.621\) in
+Europe and \(0.865\) in Asia). We can also see the distribution of
 p-values for each population:
 
 \begin{Shaded}
@@ -644,6 +669,40 @@ p-values for each population:
 
 \includegraphics{GWAS-Pvalues_files/figure-latex/visualCaseControl-1.png}
 As we can see, the conclusion from section 2 still applies to this
-scenario.
+scenario. The rationale behind these two simulation examples is that,
+statistical significance (i.e.~P value) does not give any information on
+the \textbf{practical significance} (i.e.~\(|\tilde{\beta}_G|\)). For
+both populations, the practical significance of parameter \(\beta_G\) is
+the same (0.3). However, testing in the Asian population gives higher
+statistical significance (smaller p values), due to the larger standard
+error caused by the higher \(\beta_Z\).
+
+Therefore, screening out SNPs based on the significance from study in
+the European population might miss this casual SNP, but screening based
+on the Asian population likely will not. Extra caution should be given
+when practitioners are trying to aggregate information between two such
+populations.
+
+\hypertarget{bibliography}{%
+\section{Bibliography}\label{bibliography}}
+
+\setlength{\parindent}{-0.2in}
+\setlength{\leftskip}{0.2in}
+\setlength{\parskip}{8pt}
+
+\noindent
+
+\hypertarget{refs}{}
+\leavevmode\hypertarget{ref-meta1}{}%
+Begum, Ferdouse, Debashis Ghosh, George C. Tseng, and Eleanor Feingold.
+2012. ``Comprehensive literature review and statistical considerations
+for GWAS meta-analysis.'' \emph{Nucleic Acids Research} 40 (9):
+3777--84. \url{https://doi.org/10.1093/nar/gkr1255}.
+
+\leavevmode\hypertarget{ref-meta2}{}%
+Evangelou, Evangelos, and John Ioannidis. 2013. ``Evangelou E, Ioannidis
+Jp.meta-Analysis Methods for Genome-Wide Association Studies and Beyond.
+Nat Rev Genet 14:379-389.'' \emph{Nature Reviews. Genetics} 14 (May).
+\url{https://doi.org/10.1038/nrg3472}.
 
 \end{document}

@@ -1,5 +1,5 @@
 ---
-title: "**P values of GWAS studies in different populations**"
+title: "**Note on combining p values of GWAS studies from different populations**"
 author: "Ziang Zhang"
 date: "4/17/2021"
 output: 
@@ -9,6 +9,8 @@ output:
     fig_caption: yes
 header-includes:
   - \usepackage{amsmath,amsthm, amssymb}
+bibliographystyle: apalike
+bibliography: GWAS-pvalues-ref.bibtex
 ---
 
 ```{r setup, include=FALSE}
@@ -24,23 +26,31 @@ knitr::opts_chunk$set(echo = TRUE, dev = 'png', message = F, warning = F)
 \newcommand{\Var}{\text{Var}}
 
 
+
+# Introduction:
+
+For most traits,genetic effects from specific SNP only have small effect sizes[@meta2]. Therefore, practitioners often aggregate the GWAS results from different population through different kinds of meta-analysis methods in order to achieve higher power. Aggregation through P values is a commonly used example of meta-analysis method. For example when there are several different datasets, practitioners sometimes will first carry out a comprehensive study using one dataset, and only study the SNPs with highest significance levels in the rest datasets [@meta1]. Hence, we would like to consider when such procedure will no longer be valid in this note.
+
+In this note, by examining the power and distribution of P values of Wald test, we conclude that the same hypothesis test on different populations can have very different P values under the alternative hypothesis, hence power, even when there is no heterogeneity on the true SNP effect and the covariates among the two populations.
+
+In next section, we will give a brief overview of Wald tests for Generalized Linear Models, and a short explanation of the rationale behind this phenomenon. Then, we will follow with two simulation studies to illustrate how this phenomenon occurs for binary trait.
+
 # Wald test for Generalized Linear Models:
 
-Assume the generalized linear models (glm) has the following form: $$\E(Y|X) = \mu = g^{-1}(\beta_0 + \beta_1 X_1 + \beta_2X_2) = g^{-1}(\eta),$$ where $g(.)$ is a specific link function connecting the linear predictor $\eta$ with the mean function of $Y$. 
+Assume the generalized linear model (glm) has the following form: $$\E(Y|X) = \mu = g^{-1}(\beta_0 + \beta_1 X_1 + \beta_2X_2) = g^{-1}(\eta),$$ where $g(.)$ is a specific link function connecting the linear predictor $\eta$ with the mean function of $Y$. 
 In this case, the fisher information matrix at $\beta$ can be written as $$I_n(\beta) = XW(\beta) X^T,$$ where X denotes the design matrix and $W(\beta)$ is a diagonal matrix with each diagonal term depending on the value of $\beta$ unless $g$ is identity function. Specifically, the $i^{th}$ diagonal term of W can be computed as $$w_i=(\frac{\partial u_i}{\partial\eta_i})^2/\Var(Y_i|X).$$
 
 If the question of interest is to test the hypothesis $H_0: \beta_2=0$ using Wald test, the test statistic can be written as $$T = I_n^{-1}(\hat{\beta})_{[3,3]}(\hat{\beta_2})^2,$$ where $I_n^{-1}(\hat{\beta})_{[3,3]}$ denotes the third diagonal term of the matrix $I_n^{-1}(\hat{\beta})$ and $\hat{\beta}$ is the MLE estimator. Under the null hypothesis, $T$ asymptotically follows a Chi-Square distribution with 1 degree of freedom. 
 
-Under the alternative hypothesis that $\beta_3 = \tilde{\beta}_3 \neq 0$, the non-centrality parameter of Wald test above can be computed as $$I_n^{-1}(\tilde{\beta})_{[3,3]}\tilde{\beta}_3^2,$$ where $\tilde{\beta}$ is the vector of true values for the regression parameters $\beta$. Since $I_n^{-1}(\tilde{\beta})_{[3,3]}$ will not be solely a function of $\tilde{\beta}_3$ unless $g$ is identity, the power function of this Wald test will not only depend on $\tilde{\beta}_3$, but the whole vector $\tilde{\beta}$.
+Under the alternative hypothesis that $\beta_2 = \tilde{\beta}_2 \neq 0$, the non-centrality parameter of Wald test above can be computed as $$I_n^{-1}(\tilde{\beta})_{[3,3]}\tilde{\beta}_2^2,$$ where $\tilde{\beta}$ is the vector of true values for the regression parameters $\beta$. Since $I_n^{-1}(\tilde{\beta})_{[3,3]}$ will not solely depend on $\tilde{\beta}_2$ unless $g$ is identity. Therefore the power function of this Wald test will not only depend on $\tilde{\beta}_2$, but the whole vector $\tilde{\beta}$.
 
 Define $d=-\sqrt{I_n^{-1}(\tilde{\beta})_{[3,3]}}\tilde{\beta}_3$, the theoretical power of this Wald test at $\tilde{\beta}$ can be computed as $$1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),$$ where $\Phi$ is the CDF of standard normal and $z_{a/2}$ is the $a/2$ quantile of standard normal.
 
 
-\clearpage
 
 # Simulation with random samples:
 
-Consider that two samples of size $n=1000$ have been collected independently on two populations (European, Asian), and question of interest is to study the association between the status of a particular disease ($Y:0/1$) and a particular SNP $G$ with minor allele frequency (MAF) $0.3$ under Hardy Weinberg Equilibrium (HWE), after controlling the effect of Z ($Z\sim N(0,\sigma=3)$).
+Consider that two samples of size $n=1000$ have been collected independently on two populations (European, Asian), and question of interest is to study the association between the status of a particular disease ($Y:0/1$) and a particular SNP $G$ with minor allele frequency (MAF) $0.3$ under Hardy Weinberg Equilibrium (HWE), after controlling the effect of a covariate Z ($Z\sim N(0,\sigma=3)$).
 
 Assume that GWAS study has been carried out for each population to test if the SNP $G$ is causal for $Y$, and the p-values are $5\times10^{-4}$ for European population and $5 \times 10^{-8}$ for Asian population, can we interpret the result as there is likely a stronger association in Asian population than European population? To answer this question, we will conduct the following simulation study.
 
@@ -97,7 +107,7 @@ kableExtra::kable(t, caption = "Case Control Ratio across genotypes") %>%
 
 ```
 
-Based on the two tables above, we can notice that the case to control ratios are similar across the two populations. Furthermore, as we can expect, the genotype group with more copies of the minor allele has higher case to control ratio. In our simulation, the samples are randomly collected from the two populations. This strategy may not be appropriate if the disease prevalence is very low, in which samples collected in a case-control design will be more appropriate. We will consider the same problem for case-control study later, and for now just focus on the case when the sample is random.
+Based on the two tables above, we can notice that the case to control ratios are similar across the two populations. Furthermore, as we can expect, the genotypic group with more copies of the minor allele has higher case to control ratio. In our simulation, the samples are randomly collected from the two populations. This strategy may not be appropriate if the disease prevalence is very low, in which samples collected in a case-control design will be preferred. We will consider the same problem for case-control study later, and for now just focus on the case when the sample is random.
 
 We can use Wald test to test the hypothesis $\beta_G = 0$ (i.e. G is a casual SNP) in each population:
 ```{r}
@@ -108,7 +118,7 @@ summary(mod_Eur)$coefficients[3,4]
 mod_As <- glm(y_As~ Z + G, family = binomial(link = "logit"))
 summary(mod_As)$coefficients[3,4]
 ```
-Note that the p-values are $0.015$ for European population, and $0.009$ for Asian population. It is typically expected that for the population with smaller p-value, the magnitude of the association (i.e. $\tilde{\beta}_G$) should be larger. However, in this simulation example the true value of $\beta_G$ is $\tilde{\beta}_G$ for both populations, and even the covariates are exactly the same. 
+Note that the p-values are $0.015$ for European population, and $0.009$ for Asian population. It is typically expected that for the population with smaller p-value, the magnitude of the association (i.e. $|\tilde{\beta}_G|$) should be larger. However, in this simulation example the true value of $\beta_G$ is $\tilde{\beta}_G=0.3$ for both populations, and even the covariates are exactly the same. 
 
 
 
@@ -223,10 +233,10 @@ Based on the figure above, we can conclude that the distribution of p values in 
 
 In this section, we will demonstrate the same problem will also occur for studies with Case-Control design, using a new simulation example. 
 
-For the new simulation, we will continue to use the two data-generating models as in section 2. However, instead of using samples randomly simulated from the population, we are now randomly samples that are randomly sampled from case and control in the following way:
+For the new simulation, we will continue to use the two data-generating models as in section 2. However, instead of using samples randomly simulated from the population, we are now randomly sampling from cases and controls in the following way:
 
 - First, use the two true models to generate two \textbf{populations} of size 3000 in the same way as in section 2.
-- Secondly, among all the cases and controls in each population, randomly sample 400 observations from cases and 600 observations from controls.
+- Secondly, among all the cases and controls in each population, randomly sample 500 observations from cases and 500 observations from controls.
 - Finally, for each population, combine all the sampled cases and controls to have a sample with size 1000.
 
 ```{r casecontrol}
@@ -241,8 +251,8 @@ betaZ <- 0.8
 betaG <- 0.3
 ylat_Eur <- beta0 + betaG*G + betaZ*Z + rlogis(N)
 y_Eur <- ifelse(ylat_Eur >= 0, 1, 0)
-Eur_controls <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(600)
-Eur_cases <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(400)
+Eur_controls <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(500)
+Eur_cases <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(500)
 EU_sample <- rbind(Eur_cases,Eur_controls)
 mod_Eur <- glm(Y ~ Z + G,data = EU_sample, family = binomial(link = "logit"))
 summary(mod_Eur)$coefficients[3,4]
@@ -254,8 +264,8 @@ betaZ <- 0.1
 betaG <- 0.3
 ylat_As <- beta0 + betaG*G + betaZ*Z + rlogis(N)
 y_As <- ifelse(ylat_As >= 0, 1, 0)
-As_controls <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(600)
-As_cases <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(400)
+As_controls <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(500)
+As_cases <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(500)
 As_sample <- rbind(As_cases,As_controls)
 mod_As <- glm(Y ~ Z + G,data = As_sample, family = binomial(link = "logit"))
 summary(mod_As)$coefficients[3,4]
@@ -276,8 +286,8 @@ p1 <- c()
 for (i in 1:800) {
   ylat_Eur <- beta0 + betaG*G + betaZ*Z + rlogis(N)
   y_Eur <- ifelse(ylat_Eur >=0, 1, 0)
-  Eur_controls <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(600)
-  Eur_cases <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(400)
+  Eur_controls <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(500)
+  Eur_cases <- tibble(Y = y_Eur, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(500)
   EU_sample <- rbind(Eur_cases,Eur_controls)
   mod_Eur <- glm(Y~Z + G,data = EU_sample, family = binomial(link = "logit"))
   p1[i] <- summary(mod_Eur)$coefficients[3,4]
@@ -294,8 +304,8 @@ p2 <- c()
 for (i in 1:800) {
   ylat_As <- beta0 + betaG*G + betaZ*Z + rlogis(N)
   y_As <- ifelse(ylat_As >=0, 1, 0)
-  As_controls <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(600)
-  As_cases <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(400)
+  As_controls <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 0) %>% sample_n(500)
+  As_cases <- tibble(Y = y_As, G = G, Z = Z) %>% filter(Y == 1) %>% sample_n(500)
   As_sample <- rbind(As_cases,As_controls)
   mod_As <- glm(Y~Z + G,data = As_sample, family = binomial(link = "logit"))
   p2[i] <- summary(mod_As)$coefficients[3,4]
@@ -305,12 +315,18 @@ emp_power
 
 ```
 
-Again, as we have observed in section 2, the empirical powers of Wald test still differ a lot when we use case-control design ($0.61$ in Europe and $0.863$ in Asia). We can also see the distribution of p-values for each population:
+Again, as we have observed in section 2, the empirical powers of Wald test still differ a lot when we use case-control design ($0.621$ in Europe and $0.865$ in Asia). We can also see the distribution of p-values for each population:
 
 ```{r visualCaseControl}
 pcomp <- tibble(P = c(p1,p2), Population = c(rep("Europe",800),rep("Asia",800)))
 pcomp %>% ggplot(aes(x = P, fill = Population)) + geom_histogram(bins = 20, alpha=0.5, position="identity")
 ```
-As we can see, the conclusion from section 2 still applies to this scenario.
+As we can see, the conclusion from section 2 still applies to this scenario. The rationale behind these two simulation examples is that, statistical significance (i.e. P value) does not give any information on the \textbf{practical significance} (i.e. $|\tilde{\beta}_G|$). For both populations, the practical significance of parameter $\beta_G$ is the same (0.3). However, testing in the Asian population gives higher statistical significance (smaller p values), due to the larger standard error caused by the higher $\beta_Z$. 
 
+Therefore, screening out SNPs based on the significance from study in the European population might miss this casual SNP, but screening based on the Asian population likely will not. Extra caution should be given when practitioners are trying to aggregate information between two such populations.
 
+# Bibliography
+\setlength{\parindent}{-0.2in}
+\setlength{\leftskip}{0.2in}
+\setlength{\parskip}{8pt}
+\noindent
