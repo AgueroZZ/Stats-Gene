@@ -36,7 +36,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-  pdftitle={Note on combining p values of GWAS studies from different populations},
+  pdftitle={Notes on combining p-values of GWAS studies from different populations},
   pdfauthor={Ziang Zhang},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
@@ -115,10 +115,10 @@
 \usepackage{makecell}
 \usepackage{xcolor}
 
-\title{\textbf{Note on combining p values of GWAS studies from different
+\title{\textbf{Notes on combining p-values of GWAS studies from different
 populations}}
 \author{Ziang Zhang}
-\date{4/17/2021}
+\date{}
 
 \begin{document}
 \maketitle
@@ -130,27 +130,28 @@ populations}}
 \hypertarget{introduction}{%
 \section{Introduction:}\label{introduction}}
 
-For most traits,genetic effects from specific SNP only have small effect
-sizes(Evangelou and Ioannidis 2013). Therefore, practitioners often
-aggregate the GWAS results from different population through different
-kinds of meta-analysis methods in order to achieve higher power.
-Aggregation through P values is a commonly used example of meta-analysis
-method. For example when there are several different datasets,
-practitioners sometimes will first carry out a comprehensive study using
-one dataset, and only study the SNPs with highest significance levels in
-the rest datasets (Begum et al. 2012). Hence, we would like to consider
-when such procedure will no longer be valid in this note.
+For most human traits, genetic effects from specific SNP only have small
+effect sizes (Evangelou and Ioannidis 2013). Therefore, practitioners
+often aggregate the GWAS results from different populations through
+meta-analysis methods in order to achieve higher power. Aggregation
+through p-values is a commonly used example of meta-analysis method. For
+example when there are several different datasets, practitioners
+sometimes will first carry out a comprehensive study using one dataset,
+and only follow up with the SNPs that have the highest significance
+levels (Begum et al. 2012). In this note, we would like to consider
+whether such procedures will be appropriate for the analysis of binary
+traits.
 
-In this note, by examining the power and distribution of P values of
-Wald test, we conclude that the same hypothesis test on different
-populations can have very different P values under the alternative
-hypothesis, hence power, even when there is no heterogeneity on the true
-SNP effect and the covariates among the two populations.
+With examples of Wald test, we presented the phenomenon that the same
+hypothesis test on different populations can have very different
+p-values under the alternative hypothesis, hence very different powers,
+even if there is no heterogeneity on the true SNP effect and the
+covariates among the two datasets are identical.
 
 In next section, we will give a brief overview of Wald tests for
-Generalized Linear Models, and a short explanation of the rationale
+Generalized Linear Models, with a short explanation of the rationale
 behind this phenomenon. Then, we will follow with two simulation studies
-to illustrate how this phenomenon occurs for binary trait.
+to illustrate how this phenomenon can occur for binary trait.
 
 \hypertarget{wald-test-for-generalized-linear-models}{%
 \section{Wald test for Generalized Linear
@@ -190,6 +191,22 @@ theoretical power of this Wald test at \(\tilde{\beta}\) can be computed
 as \[1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),\] where \(\Phi\) is the CDF of
 standard normal and \(z_{a/2}\) is the \(a/2\) quantile of standard
 normal.
+
+In summary, this means that if we utilize Poisson regression to analyze
+count traits (e.g.~number of cancers) or Logistic/Probit regression to
+analyze binary traits (e.g.~disease status), powers of Wald test from
+different populations can be dramatically different, even if the two
+populations share the same effect size (i.e.~\(|\tilde{\beta}_2|\)) and
+the same set of covariates \(\{X_{1i},X_{2i}\}_{i=1}^n\). The rationale
+behind this is actually the classical contrast between
+\textbf{statistical significance} measured by p-values and
+\textbf{practical significance} measured by the size of the effect
+\(|\tilde{\beta}_2|\). In Wald test, p-values are determined by both the
+practical significance \(|\tilde{\beta}_2|\) and the standard error
+\(\sqrt{I_n^{-1}(\tilde{\beta})_{[3,3]}}\). Since the standard errors of
+the MLE estimator will be different on the two populations, the
+conclusion drawn from statistical significance may be inconsistent with
+the practical significance of effects in the two populations.
 
 \hypertarget{simulation-with-random-samples}{%
 \section{Simulation with random
