@@ -170,14 +170,15 @@ traits.
 
 With examples of Wald test, we presented the phenomenon that the same
 hypothesis test on different binary traits can have very different
-p-values under the alternative hypothesis, hence very different powers,
-even if there is no heterogeneity on the true SNP effect and the two
-traits are analyzed using the same dataset.
+distributions of p-value under the alternative hypothesis, hence very
+different powers, even if the two traits have the same true SNP effect
+and are analyzed using the same dataset.
 
-In the next section, we will give a brief overview of Wald tests for
+In the next section, we will give a brief overview of Wald test for
 Generalized Linear Models, with a short explanation of the rationale
-behind this phenomenon. Then, we will follow with two simulation studies
-to illustrate how this phenomenon can occur for binary trait.
+behind the phenomenon we mentioned above. Then, we will follow with two
+simulation studies to illustrate how this phenomenon is affecting the
+analysis of binary trait, but not the analysis of continuous trait.
 
 \hypertarget{wald-test-for-generalized-linear-models}{%
 \section{Wald test for Generalized Linear
@@ -210,7 +211,7 @@ vector of true values for the regression parameters \(\beta\). Since
 \(g\) is identity. Therefore the power function of this Wald test will
 not only depend on \(\beta_2\), but the whole vector \(\beta\).
 
-Define \(d=-\frac{\beta_3}{\sqrt{I_n^{-1}(\beta)_{[3,3]}}}\), the
+Define \(d=-\frac{\beta_2}{\sqrt{I_n^{-1}(\beta)_{[3,3]}}}\), the
 theoretical power of this Wald test at \(\beta\) can be computed as
 \[1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),\] where \(\Phi\) is the CDF of
 standard normal and \(z_{a/2}\) is the \(a/2\) quantile of standard
@@ -236,8 +237,8 @@ significance of effects in the two studies.
 \section{Difference between continuous trait and binary
 trait:}\label{difference-between-continuous-trait-and-binary-trait}}
 
-For the analysis of continuous trait, the natural option would be
-classical Gaussian linear regression model:
+For the analysis of continuous trait, a natural option would be using
+ordinary Gaussian linear regression model:
 \[Y = \beta_0 + \beta_1 X_1 + \beta_2X_2+\epsilon,\] where
 \(\epsilon \sim N(0,\sigma^2)\).
 
@@ -250,9 +251,10 @@ depends on the nuisance parameter \(\sigma\), power of this test will
 not change as \(\beta_0\) or \(\beta_1\) change, as long as the nuisance
 parameter is the same. This implies, if a SNP \(G\) has true effect
 \(\beta_G\) being constant across two traits, then the power of testing
-\(\beta_G = 0\) will be constant across two traits as well. Therefore,
-the aggregation of evidences across traits will be straightforward and
-smaller p value can be associated to larger SNP effect.
+\(\beta_G = 0\) will be constant across two traits as well (assume same
+\(\sigma^2\)). Therefore, the aggregation of evidences across traits
+will be straightforward and smaller p value can be associated with
+larger SNP effect.
 
 On the other hand, if the target is to combine evidence across several
 binary traits, the result will no longer be as straightforward. If
@@ -261,21 +263,23 @@ traits are generated from the following logistic regression model:
 the corresponding non-centrality parameter of testing \(\beta_2=0\)
 becomes \[\frac{\beta_2}{[X^TW_\beta X]^{-1}_{[33]}}.\]
 
-Since \(g^{-1}(s)= \frac{\exp(s)}{1+\exp(s)}\) for logistic regression,
-we can compute the i-th term of the diagonal matrix \(W_\beta\) as
-\[[W_\beta]_{ii} = f(s_i)=\frac{\exp(-s_i)}{(1+\exp(-s_i))^2}.\] The
-function \(f(.)\) represents the density function of standard logistic
-distribution, and the term \(s_i\) is the i-th linear predictor. This
-implies the non-centrality parameter, hence the power will depend on
-every parameter in the model, not just on the parameter of interest
-\(\beta_2\).
+Since \(g^{-1}(\eta)= \frac{\exp(\eta)}{1+\exp(\eta)}\) for logistic
+regression, we can compute the i-th term of the diagonal matrix
+\(W_\beta\) as
+\[[W_\beta]_{ii} = f(\eta_i)=\frac{\exp(-\eta_i)}{(1+\exp(-\eta_i))^2}.\]
+The function \(f(.)\) represents the density function of standard
+logistic distribution, and the term \(\eta_i\) is the i-th linear
+predictor. This implies the non-centrality parameter, hence the power
+will depend on every parameter in the model, not just on the parameter
+of interest \(\beta_2\).
 
 An important consequence of this phenomenon is that, the magnitude of p
-values will not reflect the magnitude of the SNP effects, even if the
-two studies are carried out using one common dataset. For example, if a
-SNP has effect \(\beta_G\) on both traits, it can still show
-significance on only one trait because of the difference in the
-covariate effect such as gender or race.
+values (statistical significance) will not reflect the magnitude of the
+SNP effects (pratical significance), even if the two studies are carried
+out using one common dataset. For example, if a SNP has effect
+\(\beta_G\) on both traits, it may show significance on only one trait
+because of the difference in the covariate effect such as gender or
+race.
 
 \hypertarget{simulation-with-gaussian-linear-regression-model}{%
 \section{Simulation with Gaussian linear regression
@@ -376,17 +380,17 @@ be 0.549 in both studies. As we expected, since in both traits the SNP
 effect is the same, powers should be the same for the two traits as
 well. To make sure the computed theoretical powers are indeed correct,
 we can compare them with empirical powers obtained from repeated
-simulations (K = 800):
+simulations (K = 2000):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{12345}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
 \DocumentationTok{\#\# A:}
 \NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
 \NormalTok{betaZ }\OtherTok{\textless{}{-}} \FloatTok{0.8}
 \NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
 \NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{800}\NormalTok{) \{}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
 \NormalTok{  yA }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaZ}\SpecialCharTok{*}\NormalTok{Z }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N, }\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 \NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yA}\SpecialCharTok{\textasciitilde{}}\NormalTok{Z}\SpecialCharTok{+}\NormalTok{G)}
 \NormalTok{  p1[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
@@ -397,7 +401,7 @@ simulations (K = 800):
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.56875
+## [1] 0.5505
 \end{verbatim}
 
 \begin{Shaded}
@@ -407,23 +411,23 @@ simulations (K = 800):
 \NormalTok{betaZ }\OtherTok{\textless{}{-}} \FloatTok{0.1}
 \NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
 \NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{800}\NormalTok{) \{}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
 \NormalTok{  yB }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaZ}\SpecialCharTok{*}\NormalTok{Z }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N, }\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 \NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yB}\SpecialCharTok{\textasciitilde{}}\NormalTok{Z}\SpecialCharTok{+}\NormalTok{G)}
 \NormalTok{  p2[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \NormalTok{\}}
-\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p1 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
+\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p2 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
 \NormalTok{emp\_power}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.56875
+## [1] 0.5395
 \end{verbatim}
 
-Based on the \(800\) resampling results, the empirical powers are
-exactly same in the two studies, which is consistent to the result from
-theoretical powers.
+Based on the \(2000\) resampling results, the empirical powers are
+basically the same in the two studies (0.55 for trait A and 0.54 for
+trait B), which is consistent to the result from theoretical powers.
 
 \hypertarget{simulation-with-logistic-regression-model}{%
 \section{Simulation with logistic regression
@@ -525,25 +529,55 @@ casual SNP) for each trait:
 \begin{Highlighting}[]
 \DocumentationTok{\#\# A:}
 \NormalTok{mod\_A }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_A}\SpecialCharTok{\textasciitilde{}}\NormalTok{Z }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\FunctionTok{summary}\NormalTok{(mod\_A)}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\FunctionTok{summary}\NormalTok{(mod\_A)}\SpecialCharTok{$}\NormalTok{coefficients, }\AttributeTok{caption =} \StringTok{"Fitted Model for Trait A"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## [1] 0.01510122
-\end{verbatim}
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-1}Fitted Model for Trait A}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{l|r|r|r|r}
+\hline
+  & Estimate & Std. Error & z value & Pr(>|z|)\\
+\hline
+(Intercept) & -0.4645384 & 0.1250578 & -3.714589 & 0.0002035\\
+\hline
+Z & 0.8137269 & 0.0508021 & 16.017584 & 0.0000000\\
+\hline
+G & 0.3242170 & 0.1334258 & 2.429942 & 0.0151012\\
+\hline
+\end{tabular}
+\end{table}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \DocumentationTok{\#\# B:}
 \NormalTok{mod\_B }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_B}\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\FunctionTok{summary}\NormalTok{(mod\_B)}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\FunctionTok{summary}\NormalTok{(mod\_B)}\SpecialCharTok{$}\NormalTok{coefficients, }\AttributeTok{caption =} \StringTok{"Fitted Model for Trait B"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## [1] 0.008987236
-\end{verbatim}
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-1}Fitted Model for Trait B}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{l|r|r|r|r}
+\hline
+  & Estimate & Std. Error & z value & Pr(>|z|)\\
+\hline
+(Intercept) & -0.4625221 & 0.0898641 & -5.146908 & 0.0000003\\
+\hline
+Z & 0.0538062 & 0.0210894 & 2.551332 & 0.0107312\\
+\hline
+G & 0.2547557 & 0.0975127 & 2.612539 & 0.0089872\\
+\hline
+\end{tabular}
+\end{table}
 
 Note that the p-values are \(0.015\) for trait A, and \(0.009\) for
 trait B. It is typically expected that for the trait with smaller
@@ -555,7 +589,7 @@ are exactly the same.
 Again, assume that the hypothesis \(\beta_G = 0\) will be tested using
 Wald test with \(\alpha=0.05\), then we can compute the theoretical
 powers of the two Wald test using the simulated data \(\{G_i,Z_i\}_n\)
-and the true parameters vectors \(\beta_{Euro},\beta_{Asia}\):
+and the true parameters vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -633,18 +667,18 @@ different distributions on the two traits. We can double check that our
 theoretical powers for both tests are correct using empirical powers:
 
 To compute the empirical powers, we re-simulated each type of binary
-trait for \(K = 800\) times, and compute the \(800\) p-values in each
+trait for \(K = 2000\) times, and compute the \(2000\) p-values in each
 trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\DocumentationTok{\#\# Euro:}
+\DocumentationTok{\#\# A:}
 \NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
 \NormalTok{betaZ }\OtherTok{\textless{}{-}} \FloatTok{0.8}
 \NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
 \NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{800}\NormalTok{) \{}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
 \NormalTok{  ylat\_A }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaZ}\SpecialCharTok{*}\NormalTok{Z }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
 \NormalTok{  y\_A\_rep }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_A }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
 \NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_A\_rep}\SpecialCharTok{\textasciitilde{}}\NormalTok{Z}\SpecialCharTok{+}\NormalTok{G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
@@ -656,18 +690,17 @@ trait:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.61625
+## [1] 0.6115
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\DocumentationTok{\#\# Asia:}
+\DocumentationTok{\#\# B:}
 \NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
 \NormalTok{betaZ }\OtherTok{\textless{}{-}} \FloatTok{0.1}
 \NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
 \NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{800}\NormalTok{) \{}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
 \NormalTok{  ylat\_B }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaZ}\SpecialCharTok{*}\NormalTok{Z }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
 \NormalTok{  y\_B\_rep }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_B }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
 \NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_B\_rep}\SpecialCharTok{\textasciitilde{}}\NormalTok{Z}\SpecialCharTok{+}\NormalTok{G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
@@ -679,11 +712,11 @@ trait:
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.8725
+## [1] 0.8635
 \end{verbatim}
 
-Based on the \(800\) resampling results, the empirical powers are
-respectively 0.616 for trait A and 0.873 for trait B. These values are
+Based on the \(2000\) resampling results, the empirical powers are
+respectively 0.612 for trait A and 0.864 for trait B. These values are
 quite close to the theoretical values \(0.619\) and \(0.861\) we
 computed above. The distributions of p-values in each trait can be
 visualized as well:
@@ -691,7 +724,7 @@ visualized as well:
 \begin{Shaded}
 \begin{Highlighting}[]
 \DocumentationTok{\#\#\# Comparison:}
-\NormalTok{pcomp }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{P =} \FunctionTok{c}\NormalTok{(p1,p2), }\AttributeTok{trait =} \FunctionTok{c}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\DecValTok{800}\NormalTok{),}\FunctionTok{rep}\NormalTok{(}\StringTok{"B"}\NormalTok{,}\DecValTok{800}\NormalTok{)))}
+\NormalTok{pcomp }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{P =} \FunctionTok{c}\NormalTok{(p1,p2), }\AttributeTok{trait =} \FunctionTok{c}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\DecValTok{2000}\NormalTok{),}\FunctionTok{rep}\NormalTok{(}\StringTok{"B"}\NormalTok{,}\DecValTok{2000}\NormalTok{)))}
 \NormalTok{pcomp }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ P, }\AttributeTok{fill =}\NormalTok{ trait)) }\SpecialCharTok{+} \FunctionTok{geom\_histogram}\NormalTok{(}\AttributeTok{bins =} \DecValTok{20}\NormalTok{, }\AttributeTok{alpha=}\FloatTok{0.5}\NormalTok{, }\AttributeTok{position=}\StringTok{"identity"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -699,8 +732,8 @@ visualized as well:
 \includegraphics{GWAS-Pvalues_files/figure-latex/visualization-1.png}
 
 Based on the figure above, we can conclude that the distribution of p
-values in trait A is stochastically smaller than the distribution in
-trait B, even if their underlying \(\beta_G\) are both \(0.3\).
+values in trait B is stochastically smaller than the distribution in
+trait A, even if their underlying \(\beta_G\) are both \(0.3\).
 Therefore, it shows that the magnitudes of p-values of different studies
 are not directly comparable, unless the generalized linear regression
 model being used is the ordinary linear regression model with \(g\)
@@ -723,13 +756,13 @@ being identity function.
 Begum, Ferdouse, Debashis Ghosh, George C. Tseng, and Eleanor Feingold.
 2012. {``{Comprehensive literature review and statistical considerations
 for GWAS meta-analysis}.''} \emph{Nucleic Acids Research} 40 (9):
-3777--84. \url{https://doi.org/10.1093/nar/gkr1255}.
+3777--84.
 
 \leavevmode\hypertarget{ref-meta2}{}%
 Evangelou, Evangelos, and John Ioannidis. 2013. {``Evangelou e,
 Ioannidis JP.meta-Analysis Methods for Genome-Wide Association Studies
 and Beyond. Nat Rev Genet 14:379-389.''} \emph{Nature Reviews. Genetics}
-14 (May). \url{https://doi.org/10.1038/nrg3472}.
+14 (May).
 
 \leavevmode\hypertarget{ref-MTAG}{}%
 Turley, Patrick, Raymond K Walters, Omeed Maghzian, Aysu Okbay, James J

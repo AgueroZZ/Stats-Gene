@@ -30,9 +30,9 @@ knitr::opts_chunk$set(echo = TRUE, dev = 'png', message = F, warning = F)
 
 For most human traits, genetic effects from specific SNP only have small effect sizes [@meta2]. Therefore, practitioners often aggregate the GWAS results from different studies through meta-analysis or mega-analysis in order to achieve higher power. Aggregation through p-values is a commonly used example of meta-analysis method. For example when there are several different datasets, practitioners sometimes will first carry out a comprehensive study using one dataset, and only follow up with the SNPs that have the highest significance levels [@meta1]. Another example would be multi-trait analysis which contains a joint analysis of multiple related traits, in order to boost the statistical power [@MTAG]. In this note, we would like to consider some problems that practitioners may encounter when applying such procedures on the analysis of binary traits.
 
-With examples of Wald test, we presented the phenomenon that the same hypothesis test on different binary traits can have very different p-values under the alternative hypothesis, hence very different powers, even if there is no heterogeneity on the true SNP effect and the two traits are analyzed using the same dataset.
+With examples of Wald test, we presented the phenomenon that the same hypothesis test on different binary traits can have very different distributions of p-value under the alternative hypothesis, hence very different powers, even if the two traits have the same true SNP effect and are analyzed using the same dataset.
 
-In the next section, we will give a brief overview of Wald tests for Generalized Linear Models, with a short explanation of the rationale behind this phenomenon. Then, we will follow with two simulation studies to illustrate how this phenomenon can occur for binary trait.
+In the next section, we will give a brief overview of Wald test for Generalized Linear Models, with a short explanation of the rationale behind the phenomenon we mentioned above. Then, we will follow with two simulation studies to illustrate how this phenomenon is affecting the analysis of binary trait, but not the analysis of continuous trait.
 
 # Wald test for Generalized Linear Models:
 
@@ -43,28 +43,28 @@ If the question of interest is to test the hypothesis $H_0: \beta_2=0$ using Wal
 
 Under the alternative hypothesis that $\beta_2  \neq 0$, the non-centrality parameter of Wald test above can be computed as $$\frac{\beta_2^2}{I_n^{-1}(\beta)_{[3,3]}},$$ where $\beta$ is the vector of true values for the regression parameters $\beta$. Since $I_n^{-1}(\beta)_{[3,3]}$ will not solely depend on $\beta_2$ unless $g$ is identity. Therefore the power function of this Wald test will not only depend on $\beta_2$, but the whole vector $\beta$.
 
-Define $d=-\frac{\beta_3}{\sqrt{I_n^{-1}(\beta)_{[3,3]}}}$, the theoretical power of this Wald test at $\beta$ can be computed as $$1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),$$ where $\Phi$ is the CDF of standard normal and $z_{a/2}$ is the $a/2$ quantile of standard normal.
+Define $d=-\frac{\beta_2}{\sqrt{I_n^{-1}(\beta)_{[3,3]}}}$, the theoretical power of this Wald test at $\beta$ can be computed as $$1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),$$ where $\Phi$ is the CDF of standard normal and $z_{a/2}$ is the $a/2$ quantile of standard normal.
 
 In summary, this means that if we utilize Poisson regression to analyze count traits (e.g. number of cancers) or Logistic/Probit regression to analyze binary traits (e.g. disease status), powers of Wald test from different studies can be dramatically different, even if the two studies have the same effect size (i.e. $|\beta_2|$) and the same set of covariates $\{X_{1i},X_{2i}\}_{i=1}^n$. The rationale behind this is actually the classical contrast between \textbf{statistical significance} measured by p-values and \textbf{practical significance} measured by the size of the effect $|\beta_2|$. In Wald test, p-values are determined by both the practical significance $|\beta_2|$ and the standard error $\sqrt{I_n^{-1}(\beta)_{[3,3]}}$. Since the standard errors of the MLE estimator will be different on the two studies, the conclusion drawn from statistical significance may be inconsistent with the practical significance of effects in the two studies.
 
 # Difference between continuous trait and binary trait:
 
-For the analysis of continuous trait, the natural option would be classical Gaussian linear regression model:
+For the analysis of continuous trait, a natural option would be using ordinary Gaussian linear regression model:
 $$Y = \beta_0 + \beta_1 X_1 + \beta_2X_2+\epsilon,$$
 where $\epsilon \sim N(0,\sigma^2)$.
 
 In this case, suppose the question of interest is testing $\beta_2=0$, the Wald test will have non-centrality parameter being $$\frac{\beta_2^2}{\sigma^2[X^TX]^{-1}_{[33]}}.$$
 
-Because the (inverse) information matrix $\sigma^2[X^TX]^{-1}$ only depends on the nuisance parameter $\sigma$, power of this test will not change as $\beta_0$ or $\beta_1$ change, as long as the nuisance parameter is the same. This implies, if a SNP $G$ has true effect $\beta_G$ being constant across two traits, then the power of testing $\beta_G = 0$ will be constant across two traits as well. Therefore, the aggregation of evidences across traits will be straightforward and smaller p value can be associated to larger SNP effect.
+Because the (inverse) information matrix $\sigma^2[X^TX]^{-1}$ only depends on the nuisance parameter $\sigma$, power of this test will not change as $\beta_0$ or $\beta_1$ change, as long as the nuisance parameter is the same. This implies, if a SNP $G$ has true effect $\beta_G$ being constant across two traits, then the power of testing $\beta_G = 0$ will be constant across two traits as well (assume same $\sigma^2$). Therefore, the aggregation of evidences across traits will be straightforward and smaller p value can be associated with larger SNP effect.
 
 On the other hand, if the target is to combine evidence across several binary traits, the result will no longer be as straightforward. If traits are generated from the following logistic regression model:
 $$\p(Y=1|X) = \beta_0 + \beta_1 X_1 + \beta_2X_2,$$
 In this case, the corresponding non-centrality parameter of testing $\beta_2=0$ becomes $$\frac{\beta_2}{[X^TW_\beta X]^{-1}_{[33]}}.$$
 
-Since $g^{-1}(s)= \frac{\exp(s)}{1+\exp(s)}$ for logistic regression, we can compute the i-th term of the diagonal matrix $W_\beta$ as $$[W_\beta]_{ii} = f(s_i)=\frac{\exp(-s_i)}{(1+\exp(-s_i))^2}.$$
-The function $f(.)$ represents the density function of standard logistic distribution, and the term $s_i$ is the i-th linear predictor. This implies the non-centrality parameter, hence the power will depend on every parameter in the model, not just on the parameter of interest $\beta_2$. 
+Since $g^{-1}(\eta)= \frac{\exp(\eta)}{1+\exp(\eta)}$ for logistic regression, we can compute the i-th term of the diagonal matrix $W_\beta$ as $$[W_\beta]_{ii} = f(\eta_i)=\frac{\exp(-\eta_i)}{(1+\exp(-\eta_i))^2}.$$
+The function $f(.)$ represents the density function of standard logistic distribution, and the term $\eta_i$ is the i-th linear predictor. This implies the non-centrality parameter, hence the power will depend on every parameter in the model, not just on the parameter of interest $\beta_2$. 
 
-An important consequence of this phenomenon is that, the magnitude of p values will not reflect the magnitude of the SNP effects, even if the two studies are carried out using one common dataset. For example, if a SNP has effect $\beta_G$ on both traits, it can still show significance on only one trait because of the difference in the covariate effect such as gender or race.
+An important consequence of this phenomenon is that, the magnitude of p values (statistical significance) will not reflect the magnitude of the SNP effects (pratical significance), even if the two studies are carried out using one common dataset. For example, if a SNP has effect $\beta_G$ on both traits, it may show significance on only one trait because of the difference in the covariate effect such as gender or race.
 
 
 # Simulation with Gaussian linear regression model:
@@ -136,16 +136,16 @@ alpha <- 0.05
 Power_B <- 1- pnorm(delta - qnorm(alpha/2)) + pnorm(delta + qnorm(alpha/2))
 Power_B
 ```
-Based on the formula from previous section, we can compute the power to be 0.549 in both studies. As we expected, since in both traits the SNP effect is the same, powers should be the same for the two traits as well. To make sure the computed theoretical powers are indeed correct, we can compare them with empirical powers obtained from repeated simulations (K = 800):
+Based on the formula from previous section, we can compute the power to be 0.549 in both studies. As we expected, since in both traits the SNP effect is the same, powers should be the same for the two traits as well. To make sure the computed theoretical powers are indeed correct, we can compare them with empirical powers obtained from repeated simulations (K = 2000):
 
 ```{r Empirical Powers Gaussian}
-set.seed(100,sample.kind = "Rounding")
+set.seed(12345,sample.kind = "Rounding")
 ## A:
 beta0 <- -0.5
 betaZ <- 0.8
 betaG <- 0.3
 p1 <- c()
-for (i in 1:800) {
+for (i in 1:2000) {
   yA <- beta0 + betaG*G + betaZ*Z + rnorm(N, sd = 3)
   mod <- lm(yA~Z+G)
   p1[i] <- summary(mod)$coefficient[3,4]
@@ -159,15 +159,15 @@ beta0 <- -0.5
 betaZ <- 0.1
 betaG <- 0.3
 p2 <- c()
-for (i in 1:800) {
+for (i in 1:2000) {
   yB <- beta0 + betaG*G + betaZ*Z + rnorm(N, sd = 3)
   mod <- lm(yB~Z+G)
   p2[i] <- summary(mod)$coefficient[3,4]
 }
-emp_power <- mean(p1 <= alpha)
+emp_power <- mean(p2 <= alpha)
 emp_power
 ```
-Based on the $800$ resampling results, the empirical powers are exactly same in the two studies, which is consistent to the result from theoretical powers. 
+Based on the $2000$ resampling results, the empirical powers are basically the same in the two studies (0.55 for trait A and 0.54 for trait B), which is consistent to the result from theoretical powers. 
 
 
 
@@ -227,14 +227,16 @@ We can use Wald test to test the hypothesis $\beta_G = 0$ (i.e. G is a casual SN
 ```{r}
 ## A:
 mod_A <- glm(y_A~Z + G, family = binomial(link = "logit"))
-summary(mod_A)$coefficients[3,4]
+kableExtra::kable(summary(mod_A)$coefficients, caption = "Fitted Model for Trait A") %>%
+  kable_styling(latex_options = "HOLD_position", font_size = 10) 
 ## B:
 mod_B <- glm(y_B~ Z + G, family = binomial(link = "logit"))
-summary(mod_B)$coefficients[3,4]
+kableExtra::kable(summary(mod_B)$coefficients, caption = "Fitted Model for Trait B") %>%
+  kable_styling(latex_options = "HOLD_position", font_size = 10) 
 ```
 Note that the p-values are $0.015$ for trait A, and $0.009$ for trait B. It is typically expected that for the trait with smaller p-value, the magnitude of the association (i.e. $|\beta_G|$) should be larger. However, in this simulation example the true value of $\beta_G$ is $\beta_G=0.3$ for both traits, and even the covariates are exactly the same. 
 
-Again, assume that the hypothesis $\beta_G = 0$ will be tested using Wald test with $\alpha=0.05$, then we can compute the theoretical powers of the two Wald test using the simulated data $\{G_i,Z_i\}_n$ and the true parameters vectors $\beta_{Euro},\beta_{Asia}$:
+Again, assume that the hypothesis $\beta_G = 0$ will be tested using Wald test with $\alpha=0.05$, then we can compute the theoretical powers of the two Wald test using the simulated data $\{G_i,Z_i\}_n$ and the true parameters vectors:
 
 ```{r Theoretical Powers}
 ## A:
@@ -291,15 +293,15 @@ Power_B
 
 Based on the results above, we know in this simulation study, the power of Wald test will be $0.619$ for the trait A, and $0.861$ for the trait B. Note that Wald test on trait B has quite larger power compared to on trait A, despite the fact that the two samples are generated with same $\beta_G = 0.3$ and generated by the same set of $\{G_i,Z_i\}_n$. This suggests the p-values of Wald test may have very different distributions on the two traits. We can double check that our theoretical powers for both tests are correct using empirical powers:
 
-To compute the empirical powers, we re-simulated each type of binary trait for $K = 800$ times, and compute the $800$ p-values in each trait:
+To compute the empirical powers, we re-simulated each type of binary trait for $K = 2000$ times, and compute the $2000$ p-values in each trait:
 ```{r Empirical Powers}
 set.seed(100,sample.kind = "Rounding")
-## Euro:
+## A:
 beta0 <- -0.5
 betaZ <- 0.8
 betaG <- 0.3
 p1 <- c()
-for (i in 1:800) {
+for (i in 1:2000) {
   ylat_A <- beta0 + betaG*G + betaZ*Z + rlogis(N)
   y_A_rep <- ifelse(ylat_A >=0, 1, 0)
   mod <- glm(y_A_rep~Z+G, family = binomial(link = "logit"))
@@ -308,14 +310,12 @@ for (i in 1:800) {
 emp_power <- mean(p1 <= alpha)
 emp_power
 
-
-set.seed(100,sample.kind = "Rounding")
-## Asia:
+## B:
 beta0 <- -0.5
 betaZ <- 0.1
 betaG <- 0.3
 p2 <- c()
-for (i in 1:800) {
+for (i in 1:2000) {
   ylat_B <- beta0 + betaG*G + betaZ*Z + rlogis(N)
   y_B_rep <- ifelse(ylat_B >=0, 1, 0)
   mod <- glm(y_B_rep~Z+G, family = binomial(link = "logit"))
@@ -324,15 +324,15 @@ for (i in 1:800) {
 emp_power <- mean(p2 <= alpha)
 emp_power
 ```
-Based on the $800$ resampling results, the empirical powers are respectively 0.616 for trait A and 0.873 for trait B. These values are quite close to the theoretical values $0.619$ and $0.861$ we computed above. The distributions of p-values in each trait can be visualized as well:
+Based on the $2000$ resampling results, the empirical powers are respectively 0.612 for trait A and 0.864 for trait B. These values are quite close to the theoretical values $0.619$ and $0.861$ we computed above. The distributions of p-values in each trait can be visualized as well:
 
 ```{r visualization}
 ### Comparison:
-pcomp <- tibble(P = c(p1,p2), trait = c(rep("A",800),rep("B",800)))
+pcomp <- tibble(P = c(p1,p2), trait = c(rep("A",2000),rep("B",2000)))
 pcomp %>% ggplot(aes(x = P, fill = trait)) + geom_histogram(bins = 20, alpha=0.5, position="identity")
 ```
 
-Based on the figure above, we can conclude that the distribution of p values in trait A is stochastically smaller than the distribution in trait B, even if their underlying $\beta_G$ are both $0.3$. Therefore, it shows that the magnitudes of p-values of different studies are not directly comparable, unless the generalized linear regression model being used is the ordinary linear regression model with $g$ being identity function.
+Based on the figure above, we can conclude that the distribution of p values in trait B is stochastically smaller than the distribution in trait A, even if their underlying $\beta_G$ are both $0.3$. Therefore, it shows that the magnitudes of p-values of different studies are not directly comparable, unless the generalized linear regression model being used is the ordinary linear regression model with $g$ being identity function.
 
 
 \clearpage
