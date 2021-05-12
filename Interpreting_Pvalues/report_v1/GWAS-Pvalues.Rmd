@@ -142,7 +142,7 @@ beta <- c(beta0,betaZ,betaG)
 w <- c()
 for (i in 1:N) {
   si <- as.numeric(as.numeric(X[i,]) %*% beta)
-  w[i] <- (dlogis(si)^2)/(plogis(si)*(1-plogis(si)))
+  w[i] <- dlogis(si)
 }
 I <- as.matrix(t(X)) %*% diag(w,nrow = N,ncol = N) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 
@@ -168,7 +168,7 @@ beta <- c(beta0,betaZ,betaG)
 w <- c()
 for (i in 1:N) {
   si <- as.numeric(as.numeric(X[i,]) %*% beta)
-  w[i] <- (dlogis(si)^2)/(plogis(si)*(1-plogis(si)))
+  w[i] <- dlogis(si)
 }
 I <- as.matrix(t(X)) %*% diag(w,nrow = N,ncol = N) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 

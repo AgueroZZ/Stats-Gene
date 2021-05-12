@@ -36,9 +36,9 @@ In general, higher power is achieved when $\Delta$ is large. That implies, we ha
 
 ## General Expression and Non-centrality parameter:
 
-In general for a vector of parameter $\beta \in \mathbb{R}^p$, if we are interested in testing the null hypothesis of linear combination of $\beta$: $L\beta = 0$, then the test statistic will be $$(L\hat{\beta})^T L{I_n^{-1}(\hat{\beta})L^T}(L\hat{\beta})$$ which follows a chi-square distribution with $1$ degree of freedom under the null hypothesis. The matrix $I_n^{-1}(\hat{\beta})$ is the inverse of the fisher information matrix of the whole sample, evaluated at $\beta = \hat{\beta}$.
+In general for a vector of parameter $\beta \in \mathbb{R}^p$, if we are interested in testing the null hypothesis of linear combination of $\beta$: $L\beta = 0$, then the test statistic will be $$(L\hat{\beta})^T (L{I_n^{-1}(\hat{\beta})L^T})^{-1}(L\hat{\beta})$$ which follows a chi-square distribution with $1$ degree of freedom under the null hypothesis. The matrix $I_n^{-1}(\hat{\beta})$ is the inverse of the fisher information matrix of the whole sample, evaluated at $\beta = \hat{\beta}$.
 
-Specifically, if we want to test the case where $L =(0,0,..,1,0..,0)$, then our test statistic reduced to $$I_n^{-1}(\hat{\beta})_{[i,i]}(\hat{\beta}_i)^2$$ where $\beta_i$ is the i-th component of $\beta$, $I_n^{-1}(\hat{{\beta}})_{[i,i]}$ is the i-th diagonal term of $I_n^{-1}(\hat{{\beta}})$. Under the alternative hypothesis that $\beta_i=\beta_{i1}\neq0$, the limiting distribution will be a non-central chi-square distribution with non-centrality parameter being $$I_n^{-1}(\beta)_{[i,i]}\beta_{i1}$$ here $I_n^{-1}(\beta)$ is inverted fisher information matrix evaluated at the true parameter vector $\beta$.
+Specifically, if we want to test the case where $L =(0,0,..,1,0..,0)$, then our test statistic reduced to $$I_n^{-1}(\hat{\beta})_{[i,i]}^{-1}(\hat{\beta}_i)^2$$ where $\beta_i$ is the i-th component of $\beta$, $I_n^{-1}(\hat{{\beta}})_{[i,i]}$ is the i-th diagonal term of $I_n^{-1}(\hat{{\beta}})$. Under the alternative hypothesis that $\beta_i=\beta_{i1}\neq0$, the limiting distribution will be a non-central chi-square distribution with non-centrality parameter being $$I_n^{-1}(\beta)_{[i,i]}^{-1}\beta_{i1}$$ here $I_n^{-1}(\beta)$ is inverted fisher information matrix evaluated at the true parameter vector $\beta$.
 
 Note that to compute $I_n^{-1}(\beta)$, we may need more than just $\beta_{i1}$. Even though we are only interested in testing $\beta_i$, that does not imply we can compute $I_n^{-1}(\beta)$ just using the true value of $\beta_i$. We will discuss this problem in the next section in details.
 
@@ -52,13 +52,13 @@ To answer this question, we need to know when will $I_n^{-1}(\beta)$ depend on p
 
 If we consider the linear regression model: $$y = \beta_0 + \beta_GG +\beta_EE+\beta_{GE}G\times E+\epsilon$$ where $\epsilon \sim N(0,\sigma^2)$
 
-Then the fisher information matrix at $\beta$ can be computed as $$XX^T/\sigma^2$$ Note that this matrix is only affected by the variance parameter $\sigma^2$, and not affected by any regression parameter $\beta$. Therefore, the power function of Wald test for $\beta_{GE}=0$ will only depend on the magnitude of the true value of $\beta_{GE}$.
+Then the fisher information matrix at $\beta$ can be computed as $$X^TX/\sigma^2$$ Note that this matrix is only affected by the variance parameter $\sigma^2$, and not affected by any regression parameter $\beta$. Therefore, the power function of Wald test for $\beta_{GE}=0$ will only depend on the magnitude of the true value of $\beta_{GE}$.
 
 ## Wald test for `glm`:
 
 On the other hand, if the true data generating model is $$\mu = g^{-1}(\beta_0 + \beta_GG +\beta_EE+\beta_{GE}G\times E)$$ where $g(.)$ is a specified link function connecting the linear predictor with the mean of $y$.
 
-In this case, the information matrix can be written as $$XW(\beta)X^T$$ where the matrix $W(\beta)$ is a diagonal matrix with each term depends on all the regression parameter $\beta$.
+In this case, the information matrix can be written as $$X^TW(\beta)X$$ where the matrix $W(\beta)$ is a diagonal matrix with each term depends on all the regression parameter $\beta$.
 
 For a specific example, if we are using probit regression model, then the matrix $W(\beta)$ will be $$W(\beta) = diag\bigg\{\frac{\phi^2(s_i)}{\Phi(s_i)(1-\Phi(s_i))}\bigg\}$$ where $s_i = \beta_0 + \beta_GG_i +\beta_EE_i+\beta_{GE}G_i\times E_i$ and $\phi,\Phi$ are the density and cdf of standard normal distribution respectively.
 

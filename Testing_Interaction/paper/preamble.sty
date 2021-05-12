@@ -1,0 +1,316 @@
+%!TEX root = randomwalks-draft.tex
+
+% \NeedsTeXFormat{LaTeX2e}
+% \ProvidesPackage{preamble}[2019/12/10 preamble]
+
+%\RequirePackage{arxiv}
+\RequirePackage{amsmath,amsthm,amssymb,bbm}
+\RequirePackage{breqn}
+\RequirePackage{changepage}
+% \RequirePackage{natbib}
+\RequirePackage{dsfont}
+\RequirePackage{multirow}
+\RequirePackage{makecell}
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{mathtools}
+\RequirePackage{esvect}
+\RequirePackage{url}
+\RequirePackage{algorithm}
+\RequirePackage{algorithmic}
+\RequirePackage{bm}
+\RequirePackage{wrapfig}
+\RequirePackage{lipsum}
+\RequirePackage{mathrsfs}
+\RequirePackage{hyperref}
+\RequirePackage{subfiles}
+\RequirePackage[colorinlistoftodos]{todonotes}
+%\RequirePackage{subfigure}
+\RequirePackage{graphicx}
+\RequirePackage{subcaption}
+
+% \RequirePackage{unicode}
+
+\RequirePackage[margin=1in]{geometry}
+%\RequirePackage[disable]{todonotes} % hides todo notes
+
+\newcommand{\yanbo}[1]{{\color{green!50!black}(YT: #1)}}
+\newcommand{\blair}[1]{{\color{red}(BB: #1)}}
+\newcommand{\alex}[1]{{\color{blue}(AS: #1)}}
+
+% Equations
+%%%%%%%%%%%
+
+% all equation numbers same size
+\makeatletter
+\renewcommand{\maketag@@@}[1]{\hbox{\m@th\normalsize\normalfont#1}}%
+\makeatother
+
+% grey out equation numbers
+\makeatletter
+\let\reftagform@=\tagform@
+\def\tagform@#1{\maketag@@@{\ignorespaces\textcolor{gray}{(#1)}\unskip\@@italiccorr}}
+\renewcommand{\eqref}[1]{\textup{\reftagform@{\ref{#1}}}}
+\makeatother
+
+% redefines \[ ...\]  mathmode to use AMS "align" environment, which is superior
+\def\[#1\]{\begin{equation}\begin{aligned}#1\end{aligned}\end{equation}}
+\def\*[#1\]{\begin{equation*}\begin{aligned}#1\end{aligned}\end{equation*}}
+
+%%%%%%
+% Theorem enrivonments
+
+\newtheoremstyle{thmstyle}
+{10pt} % Space above
+{10pt} % Space below
+{} % Body font
+{} % Indent amount
+{\bfseries} % Theorem head font
+{.} % Punctuation after theorem head
+{.5em} % Space after theorem head
+{} % Theorem head spec (can be left empty, meaning `normal')
+
+% CleverRef settings
+%%%%%%%%%%%%%%%%%%%%
+\usepackage[capitalize,nameinlink]{cleveref}
+\usepackage{crossreftools}
+\pdfstringdefDisableCommands{%
+    \let\Cref\crtCref
+    \let\cref\crtcref
+}
+\newcommand{\creflastconjunction}{, and\nobreakspace}
+\hypersetup{%
+    bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,%
+}
+
+
+\crefname{subsection}{Section}{Sections}
+% add entries for anything missing.
+\crefname{lemma}{Lemma}{Lemmas}
+\crefname{corollary}{Corollary}{Corollaries}
+\crefname{theorem}{Theorem}{Theorems}
+\crefname{assumption}{Assumption}{Assumptions}
+
+\usepackage{thmtools}
+
+% Same numbers
+%%%%%%%%%%%%%%
+% \declaretheorem[name=Theorem, numberwithin=section]{theorem}
+
+% \declaretheorem[sibling=theorem,name=Lemma]{lemma}
+% \declaretheorem[sibling=theorem,name=Proposition]{proposition}
+% \declaretheorem[sibling=theorem,name=Corollary]{corollary}
+% \declaretheorem[sibling=theorem,name=Conjecture]{conjecture}
+% % 
+% \declaretheorem[name=Definition]{definition}
+% \declaretheorem[name=Assumption]{assumption}
+% \declaretheorem[name=Assumption, numbered=no]{assumption*}
+% \declaretheorem[qed=$\triangleleft$,sibling=theorem,name=Example]{example}
+% \declaretheorem[qed=$\triangleleft$,sibling=theorem,name=Remark]{remark}
+% \declaretheorem[qed=$\triangleleft$,sibling=theorem]{fact}
+
+
+% Different numbers
+%%%%%%%%%%%%%%%%%%%
+\declaretheorem[name=Theorem]{theorem}
+
+\declaretheorem[name=Lemma]{lemma}
+\declaretheorem[name=Proposition]{proposition}
+\declaretheorem[name=Corollary]{corollary}
+\declaretheorem[name=Conjecture]{conjecture}
+% 
+\declaretheorem[name=Definition]{definition}
+\declaretheorem[name=Assumption]{assumption}
+\declaretheorem[name=Assumption, numbered=no]{assumption*}
+\declaretheorem[qed=$\triangleleft$,name=Example]{example}
+\declaretheorem[qed=$\triangleleft$,name=Remark]{remark}
+\declaretheorem[qed=$\triangleleft$,name=Fact]{fact}
+
+% \RequirePackage{fullpage}
+%\RequirePackage{datetime}
+%\RequirePackage{epstopdf,mathabx}
+
+% \bibpunct[, ]{(}{)}{;}{a}{}{,}
+\RequirePackage{tikz}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+\RequirePackage{titlesec}
+	\titlelabel{\thetitle.\quad}
+	\titleformat*{\section}{\large\bfseries}
+	\titleformat*{\subsection}{\bfseries}
+	\titleformat*{\subsubsection}{\itshape}
+
+%%%%Definition of Roman Numbers
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Nor}{\mathcal{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Hilbert}{\mathbb{H}}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\E}{\mathbb{E}_{n}}
+\newcommand{\B}{\mathcal{R}}
+\newcommand{\K}{\mathcal{K}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\U}{\mathcal{U}}
+\newcommand{\VE}{\mathcal{E}}
+\newcommand{\1}{\mathds{1}}
+\newcommand{\p}{\mathbbm{p}}
+\newcommand{\0}{\vv{0}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\dummyparam}{\nu}
+\newcommand{\vect}[1]{\textbf{#1}}
+\newcommand{\dee}{\mathrm{d}}
+\newcommand{\GP}{\mathcal{GP}}
+\newcommand{\LA}{\text{\tiny{\tt LA}}}
+\newcommand{\G}{\text{\tiny{\tt G}}}
+
+\newcommand{\setdelim}{\ \vert \ }
+\newcommand{\scriptsetdelim}{\vert}
+\newcommand{\Bigsetdelim}{\ \Big\vert \ }
+\newcommand{\Biggsetdelim}{\ \Bigg\vert \ }
+\newcommand{\defas}{\overset{\mathrm{def}}{=}}  % to highlight a definition v. equality
+
+\newcommand{\upper}[1]{^{(#1)}}
+\newcommand{\tpose}{^{\top}}
+
+\DeclareMathOperator{\EE}{\mathbb{E}}
+\DeclareMathOperator{\PP}{\mathbb{P}}
+\DeclareMathOperator{\KK}{\mathcal{K}}
+\DeclareMathOperator{\argmin}{\arg\min}
+\DeclareMathOperator{\argmax}{\arg\max}
+
+\newcommand{\convp}{\overset{P}{\longrightarrow}}
+\newcommand{\convd}{\overset{d}{\Longrightarrow}}
+\newcommand{\conva}[1]{\overset{#1}\leadsto}
+
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\Norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\del}{\partial}
+\newcommand{\thetan}{\hat\theta_n}
+\newcommand{\sn}{\sum_{t=1}^n}
+\newcommand{\pn}{\prod_{t=1}^n}
+\newcommand{\isim}{\overset{iid}\sim}
+\newcommand{\Tr}{\strut^\intercal}
+\newcommand{\ip}[2]{\left\langle #1, #2 \right\rangle}
+\newcommand{\grad}{\nabla}
+\newcommand{\Ord}{\mathcal{O}}
+\newcommand{\poly}{\text{\upshape{poly}}}
+\newcommand{\iid}{\text{i.i.d.}}
+\newcommand{\doublefact}{{!}{!}}
+\newcommand{\ed}{\overset{d}{=}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bayesian macros
+\newcommand{\dist}{\pi} % posterior distributions
+\newcommand{\posterior}{\dist}
+\newcommand{\approxpost}{\widetilde{\dist}}
+\newcommand{\llhood}{\ell_n}
+\newcommand{\llavg}{\bar{\ell}_n}
+\newcommand{\llandp}{\ell_\star}
+\newcommand{\llhess}{\mb{C}_{n}}
+\newcommand{\llhessavg}{\overline{\mb{C}}_{n}}
+\newcommand{\llhessidx}[2]{C_{n,#1#2}}
+\newcommand{\logposthess}{\mb{H}_{n}}
+\newcommand{\logposthessavg}{\overline{\mb{H}}_{n}}
+\newcommand{\logpostchol}{\widetilde{\mb{L}}_{n}}
+\newcommand{\logpostcholnon}{\mb{L}_{n}}
+
+\newcommand{\intapprox}{\widehat{I}_{n}}
+\newcommand{\tvnorm}[1]{\norm{#1}_{\tiny TV}}
+\newcommand{\pto}{\overset{p}{\to}}
+
+\newcommand{\apprx}{\widetilde \dist} % posterior distributions approximated in whatever way
+\newcommand{\GHmarg}{\apprx^{\text{\upshape\tiny GH}}(\data)}
+\newcommand{\GHapprx}[1]{\apprx^{\text{\upshape\tiny GH}}(#1 \setdelim \data)} % GH approx posterior for full posterior
+\newcommand{\dataidx}{\mb{Y}}
+\newcommand{\dataidxdum}{\mb{Y^\prime}}
+\newcommand{\data}{\mb{Y}^{(n)}} % data term
+\newcommand{\paramtrue}{\mb{\theta}^{*}} % generating theta
+\newcommand{\paramdum}{\mb{\theta^\prime}}
+\newcommand{\Etrue}{\eta^*} % generating eta
+\newcommand{\Utrue}{U^*} % generating U
+
+\newcommand{\dataprob}{\PP_{\param}}
+\newcommand{\datatrueprob}{\PP_{\param^*}}
+\newcommand{\dataprobn}{\PP_{\param}^n}
+\newcommand{\datatrueprobn}{\PP_{\param^*}^n}
+\newcommand{\dataprobinf}{\PP_{\param}^\infty}
+\newcommand{\datatrueprobinf}{\PP^{\infty}_{\param^*}}
+\newcommand{\trueprobn}{\PP^{n}_*}
+\newcommand{\post}[1]{\dist(#1 \setdelim \data)}
+\newcommand{\lldens}{\dist_{\scriptstyle \dataidx \scriptsetdelim \theta}}
+
+\newcommand{\parammle}{\widehat{\param}_n} % theta MLE
+\newcommand{\parammode}{\widetilde{\param}_n} % posterior mode
+\newcommand{\parammid}{\mb{\vartheta}_n}
+\newcommand{\parammidset}{\mathcal{V}_n}
+\newcommand{\dummydim}{s}
+\newcommand{\paramdim}{p}
+\newcommand{\datadim}{d}
+\newcommand{\subdummydim}{{}^{\dummydim}}
+\newcommand{\subparamdim}{{}^{\paramdim}}
+\newcommand{\subdatadim}{{}^{\datadim}}
+\newcommand{\paramset}{\mathcal{K}}
+\newcommand{\param}{\mb{\theta}}
+\newcommand{\paramspace}{\Theta}
+
+\newcommand{\hermite}{H}
+\newcommand{\hermitezero}{x^*}
+\newcommand{\hermitezerovec}{\mb{x}}
+\newcommand{\hermitezeroidx}{x}
+\newcommand{\hermiteset}{\mathcal{H}}
+\newcommand{\weight}{\omega}
+\newcommand{\quadnum}{k}
+\newcommand{\quadnumadj}{\bar{\quadnum}}
+\newcommand{\derivnum}{m} %number of derivatives of the llhood
+\newcommand{\derivbound}{M}
+\newcommand{\llhoodmargin}{b}
+\newcommand{\priorbig}{c_2}
+\newcommand{\priorsmall}{c_1}
+\newcommand{\priorbound}{C}
+\newcommand{\eigen}{\lambda}
+\newcommand{\postbound}{A}
+\newcommand{\conmargin}{\beta}
+\newcommand{\deltabig}{\delta_1}
+\newcommand{\deltasmall}{\delta_2}
+\newcommand{\shrinkingrad}{\gamma_n}
+\newcommand{\hessbig}{\eta_2}
+\newcommand{\hesssmall}{\eta_1}
+\newcommand{\dummyexp}{u}
+\newcommand{\univconst}{K}
+
+%Yanbo's nuissance + interest paramter stuff
+\newcommand{\Lmle}{\hat\lambda_\psi\upper{n}} % theta MLE
+%\newcommand{\llhess_cons}{ H^\lambda_{n}(\psi) }
+
+% Laplace stuff
+\newcommand{\ball}[3]{B^{#1}_{#2}(#3)} % center, radius
+\newcommand{\ballc}[3]{[B^{#1}_{#2}(#3)]^c} % center, radius
+
+
+
+% Alex's favourites
+\newcommand{\Normal}{\text{N}}
+\newcommand{\KL}[2]{\text{KL}\left( #1,#2\right)}
+\newcommand{\Reals}{\mathbb{R}}
+\newcommand{\Borel}[1]{\mathcal{B}\left(\R^{#1}\right)}
+\newcommand{\Borelset}{\mathcal{K}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\cred}{\mathcal{K}_{n}}
+\newcommand{\credapprox}{\widetilde{\mathcal{K}_{n}}}
+\newcommand{\quant}[1]{q_{n}^{#1}}
+\newcommand{\approxquant}[1]{\widetilde{q}_{n}^{#1}}
+\newcommand{\margdim}{m}
+
+\newcommand{\bracevec}[1]{\left\lbrace #1 \right\rbrace}
+
+
+\def\[#1\]{\begin{equation}\begin{aligned}#1\end{aligned}\end{equation}}
+\def\*[#1\]{\begin{align*}#1\end{align*}}
+
+\newcommand{\mb}[1]{\boldsymbol{#1}}
+
+%\allowdisplaybreaks
