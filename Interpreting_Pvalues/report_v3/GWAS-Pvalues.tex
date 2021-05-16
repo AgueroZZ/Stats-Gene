@@ -4,8 +4,8 @@
 %
 \documentclass[
 ]{article}
+\usepackage{amsmath,amssymb}
 \usepackage{lmodern}
-\usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   \usepackage[T1]{fontenc}
@@ -72,7 +72,7 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
-\usepackage{graphicx,grffile}
+\usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
 \def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
@@ -105,9 +105,32 @@
 \usepackage[normalem]{ulem}
 \usepackage{makecell}
 \usepackage{xcolor}
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1 \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces\fi
+  % set entry spacing
+  \ifnum #2 > 0
+  \setlength{\parskip}{#2\baselineskip}
+  \fi
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
-\title{\textbf{A note on combining evidence from different GWAS studies for
-binary traits}}
+\title{\textbf{A note on combining evidence from different GWAS studies
+for binary traits}}
 \author{Ziang Zhang, Lei Sun}
 \date{}
 
@@ -140,10 +163,10 @@ With examples of Wald test, we presented the phenomenon that the same
 hypothesis test on different binary traits can have very different
 distributions of p-value under the alternative hypothesis, hence very
 different powers, even if the two traits have the same true SNP effect
-and are analyzed using the same dataset. The same conclusion will still
-hold if the practitioner uses likelihood ratio test or score test, and
-we choose to focus on Wald test in this note because of its
-computational convenience.
+and are analyzed on the same set of individuals. The same phenomenon
+will also occur if the practitioner uses likelihood ratio test or score
+test, and we choose to use Wald test as the example in this note because
+of its computational convenience.
 
 In the next section, we will give a brief overview of Wald test for
 Generalized Linear Models, with a short explanation of the rationale
@@ -168,27 +191,28 @@ regression parameters and the vector of their true values.
 In this case, the fisher information matrix at \(\beta\) can be written
 as \[I_n(\beta) = X^TW(\beta) X,\] where \(W(\beta)\) is a diagonal
 matrix with each diagonal term depending on the value of \(\beta\)
-unless \(g\) is identity function. Specifically, the \(i^{th}\) diagonal
-term of W can be computed as
+unless \(g\) is identity function. More detailed examples will be
+provided in the next sections. Explicitly, the \(i^{th}\) diagonal term
+of W can be computed as
 \[w_i=(\frac{\partial u_i}{\partial\eta_i})^2/\text{Var}(Y_i|X).\]
 
 If the question of interest is to test the hypothesis \(H_0: \beta_G=0\)
 using Wald test, the test statistic can be written as
-\[Z = \frac{\hat{\beta}_G}{\sqrt{I_n^{-1}(\hat{\beta})_{[3,3]}}},\]
-where \(I_n^{-1}(\hat{\beta})_{[3,3]}\) denotes the third diagonal term
+\[Z = \frac{\hat{\beta}_G}{\sqrt{I_n^{-1}(\hat{\beta})_{[2,2]}}},\]
+where \(I_n^{-1}(\hat{\beta})_{[2,2]}\) denotes the third diagonal term
 of the matrix \(I_n^{-1}(\hat{\beta})\) and \(\hat{\beta}\) is the MLE
 estimate. Under the null hypothesis, \(Z^2\) asymptotically follows a
 Chi-Square distribution with 1 degree of freedom.
 
 Under the alternative hypothesis that \(\beta_G \neq 0\), the
 non-centrality parameter of the squared Wald test statistics above can
-be computed as \[\frac{\beta_G^2}{I_n^{-1}(\beta)_{[3,3]}}.\] Since
-\(I_n^{-1}(\beta)_{[3,3]}\) will not solely depend on \(\beta_G\) unless
+be computed as \[\frac{\beta_G^2}{I_n^{-1}(\beta)_{[2,2]}}.\] Since
+\(I_n^{-1}(\beta)_{[2,2]}\) will not solely depend on \(\beta_G\) unless
 \(g\) is identity. Therefore the power function of this Wald test will
 not only depend on \(\beta_G\), but the whole vector \(\beta\).
 
 More specifically, let
-\(d=-\frac{\beta_G}{\sqrt{I_n^{-1}(\beta)_{[3,3]}}}\), then the
+\(d=-\frac{\beta_G}{\sqrt{I_n^{-1}(\beta)_{[2,2]}}}\), then the
 theoretical power of this Wald test at \(\beta\) can be computed as
 \[1-\Phi(d+z_{a/2})+\Phi(d-z_{a/2}),\] where \(\Phi\) is the CDF of
 standard normal and \(z_{a/2}\) is the \(a/2\) quantile of standard
@@ -205,7 +229,7 @@ actually the classical contrast between
 \textbf{practical significance} measured by the size of the effect
 \(|\beta_G|\). In Wald test, p-values are determined by both the
 practical significance \(|\beta_G|\) and the standard error
-\(\sqrt{I_n^{-1}(\beta)_{[3,3]}}\). Since the standard errors of the MLE
+\(\sqrt{I_n^{-1}(\beta)_{[2,2]}}\). Since the standard errors of the MLE
 estimator will be different on the two studies, the conclusion drawn
 from statistical significance may be inconsistent with the practical
 significance of effects in the two studies.
@@ -230,7 +254,7 @@ parameter is the same. This implies, if a SNP \(G\) has true effect
 \(\beta_G\) being constant across two traits and assume \(\sigma\) being
 the same, then the power of testing \(\beta_G = 0\) will be constant
 across two traits as well. Therefore, the aggregation of evidences
-across traits will be straightforward and smaller p value can be
+across traits will be straightforward and smaller p-value can be
 associated with larger SNP effect.
 
 On the other hand, if the target is to combine evidence across several
@@ -238,27 +262,27 @@ binary traits, the result will no longer be as straightforward. If
 traits are generated from the following logistic regression model:
 \[\text{logit}(\text{P}(Y=1|X)) = \beta_0 + \beta_G G + \beta_E E,\] In
 this case, the corresponding non-centrality parameter of testing
-\(\beta_G=0\) becomes \[\frac{\beta_G}{[X^TW_\beta X]^{-1}_{[33]}}.\]
+\(\beta_G=0\) becomes \[\frac{\beta_G}{[X^TW_\beta X]^{-1}_{[2,2]}}.\]
 
 Since \(g^{-1}(\eta)= \frac{\exp(\eta)}{1+\exp(\eta)}\) for logistic
 regression, we can compute the \(i^{th}\) term of the diagonal matrix
 \(W_\beta\) as
 \[[W_\beta]_{ii} = f(\eta_i)=\frac{\exp(-\eta_i)}{(1+\exp(-\eta_i))^2}.\]
 The function \(f(.)\) represents the density function of standard
-logistic distribution, and the term \(\eta_i\) is the i-th linear
+logistic distribution, and the term \(\eta_i\) is the \(i^{th}\) linear
 predictor. This implies the non-centrality parameter, hence the power
 will depend on every parameter in the model, not just on the parameter
 of interest \(\beta_G\).
 
 To better understand the influence of \(\beta_E\) on power of the Wald
 test for \(\beta_G\). Note that
-\[\sigma_\eta^2:=\text{Var}(\eta_i) = \beta_E^2\sigma_1^2+\beta_G^2\sigma_2^2 = c_1 +c_2\beta_E^2,\]
+\[\sigma_\eta^2:=\text{Var}(\eta_i) = \beta_E^2\sigma_E^2+\beta_G^2\sigma_G^2 = c_1 +c_2\beta_E^2,\]
 where we use \(c_1\) and \(c_2\) to denote constant terms that do not
-depend on \(\beta_E\). Assume that the matrix \(X^TX \approx \Sigma_X\),
-and \(\eta_i\sim N(0,\sigma_\eta^2)\) (with density \(\phi_\eta\)),
-where \(\Sigma_X\) is a matrix that does not depend on \(\beta_E\). We
-will use the following approximation to the fisher information
-matrix:\[I = X^TW_\beta X \approx \mu_w \Sigma_X,\] where
+depend on \(\beta_E\). Denote the matrix \(X^TX\) as \(\Sigma_X\), and
+\(\eta_i\sim N(0,\sigma_\eta^2)\) (with density \(\phi_\eta\)), where
+\(\Sigma_X\) is a matrix that does not depend on \(\beta_E\). We will
+assume the fisher information matrix can be approximated as the
+following:\[I = X^TW_\beta X \approx \mu_w \Sigma_X,\] where
 \(\mu_w = \mathbb{E}(w_i)\). Hence, we know that
 \[I^{-1}_{[2,2]} \propto \frac{1}{\mu_w}.\]
 
@@ -270,10 +294,12 @@ Hence \(I^{-1}_{[2,2]} \overset{approxi}{\propto} |\beta_E|\), which
 means that we expect the power of testing \(\beta_G\) decreases as
 \(|\beta_E|\) grows.
 
-An important consequence of this phenomenon is that, the magnitude of p
-values (statistical significance) will not reflect the magnitude of the
-SNP effects (practical significance), even if the two studies are
-carried out on the same set of individuals. For example, if a SNP has
+An important consequence of this phenomenon is that, the magnitude of
+p-values (statistical significance) will not reflect the magnitude of
+the SNP effects (practical significance), even if the two studies are
+carried out on the same set of individuals. Instead, the interpretation
+of this p-value should be the significance of \(\beta_G\) relative to
+other covariate effects such as \(\beta_E\). For example, if a SNP has
 effect \(\beta_G\) on both traits, it may show significance on only one
 trait because of the difference in the covariate effect such as age or
 sex.
@@ -286,7 +312,7 @@ Assume a dataset of size \(n=1000\) has been collected. The dataset
 contains the information of a continuous covariate E, a SNP G, and two
 continuous traits (A and B). Without loss of generality, assume this SNP
 follows hardy weinberg equilibrium (HWE) with minor allele frequency
-(MAF) \(0.3\), and the covariate \(E\) has been centered such that
+(MAF) \(0.3\), and the covariate \(E\) has distribution such that
 \(E\sim N(0,3)\).
 
 Furthermore, we assume that the generating models for each trait are the
@@ -301,43 +327,43 @@ trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{### Simulated the common E and G}
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\DataTypeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\NormalTok{N <-}\StringTok{ }\DecValTok{1000}
-\NormalTok{G <-}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{),}\DataTypeTok{size =}\NormalTok{ N, }\DataTypeTok{replace =}\NormalTok{ T, }\DataTypeTok{prob =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.49}\NormalTok{,}\FloatTok{0.42}\NormalTok{,}\FloatTok{0.09}\NormalTok{))}
-\NormalTok{E <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N,}\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
+\DocumentationTok{\#\#\# Simulated the common E and G}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
+\NormalTok{N }\OtherTok{\textless{}{-}} \DecValTok{1000}
+\NormalTok{G }\OtherTok{\textless{}{-}} \FunctionTok{sample}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{),}\AttributeTok{size =}\NormalTok{ N, }\AttributeTok{replace =}\NormalTok{ T, }\AttributeTok{prob =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.49}\NormalTok{,}\FloatTok{0.42}\NormalTok{,}\FloatTok{0.09}\NormalTok{))}
+\NormalTok{E }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(N,}\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 
-\CommentTok{### Simulate each trait's disease status based on E and G}
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{yA <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N,}\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
+\DocumentationTok{\#\#\# Simulate each trait\textquotesingle{}s disease status based on E and G}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{yA }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N,}\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.1}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{yB <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N, }\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.1}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{yB }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N, }\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\CommentTok{### Theoretical Power}
-\NormalTok{mod_A <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(yA}\OperatorTok{~}\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G)}
-\CommentTok{#### Get the design matrix:}
-\NormalTok{X <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod_A}\OperatorTok{$}\NormalTok{model[,}\OperatorTok{-}\DecValTok{1}\NormalTok{])}
-\CommentTok{### Compute the weight matrix W:}
-\NormalTok{beta <-}\StringTok{ }\KeywordTok{c}\NormalTok{(beta0,betaE,betaG)}
-\NormalTok{I <-}\StringTok{ }\NormalTok{(}\DecValTok{1}\OperatorTok{/}\DecValTok{9}\NormalTok{)}\OperatorTok{*}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(}\KeywordTok{t}\NormalTok{(X)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(X)}
-\CommentTok{#### Invert to get the true covariance matrix }
-\NormalTok{V <-}\StringTok{ }\KeywordTok{solve}\NormalTok{(I)}
-\CommentTok{### Compute the power function:}
-\NormalTok{delta <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\OperatorTok{*}\NormalTok{(}\DecValTok{0}\OperatorTok{-}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
-\NormalTok{alpha <-}\StringTok{ }\FloatTok{0.05}
-\NormalTok{Power_A <-}\StringTok{ }\DecValTok{1}\OperatorTok{-}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{-}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{)) }\OperatorTok{+}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{+}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{))}
-\NormalTok{Power_A}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\DocumentationTok{\#\#\# Theoretical Power}
+\NormalTok{mod\_A }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yA}\SpecialCharTok{\textasciitilde{}}\NormalTok{E }\SpecialCharTok{+}\NormalTok{ G)}
+\DocumentationTok{\#\#\#\# Get the design matrix:}
+\NormalTok{X }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod\_A}\SpecialCharTok{$}\NormalTok{model[,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{])}
+\DocumentationTok{\#\#\# Compute the weight matrix W:}
+\NormalTok{beta }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(beta0,betaE,betaG)}
+\NormalTok{I }\OtherTok{\textless{}{-}}\NormalTok{ (}\DecValTok{1}\SpecialCharTok{/}\DecValTok{9}\NormalTok{)}\SpecialCharTok{*} \FunctionTok{as.matrix}\NormalTok{(}\FunctionTok{t}\NormalTok{(X)) }\SpecialCharTok{\%*\%} \FunctionTok{as.matrix}\NormalTok{(X)}
+\DocumentationTok{\#\#\#\# Invert to get the true covariance matrix }
+\NormalTok{V }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(I)}
+\DocumentationTok{\#\#\# Compute the power function:}
+\NormalTok{delta }\OtherTok{\textless{}{-}} \FunctionTok{sqrt}\NormalTok{(}\DecValTok{1}\SpecialCharTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\SpecialCharTok{*}\NormalTok{(}\DecValTok{0}\SpecialCharTok{{-}}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05}
+\NormalTok{Power\_A }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{{-}} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{{-}} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{)) }\SpecialCharTok{+} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{+} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{))}
+\NormalTok{Power\_A}
 \end{Highlighting}
 \end{Shaded}
 
@@ -347,24 +373,24 @@ trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\CommentTok{### Theoretical Power}
-\NormalTok{mod_B <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(yB}\OperatorTok{~}\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G)}
-\CommentTok{#### Get the design matrix:}
-\NormalTok{X <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod_B}\OperatorTok{$}\NormalTok{model[,}\OperatorTok{-}\DecValTok{1}\NormalTok{])}
-\CommentTok{### Compute the weight matrix W:}
-\NormalTok{beta <-}\StringTok{ }\KeywordTok{c}\NormalTok{(beta0,betaE,betaG)}
-\NormalTok{I <-}\StringTok{ }\NormalTok{(}\DecValTok{1}\OperatorTok{/}\DecValTok{9}\NormalTok{)}\OperatorTok{*}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(}\KeywordTok{t}\NormalTok{(X)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(X)}
-\CommentTok{#### Invert to get the true covariance matrix }
-\NormalTok{V <-}\StringTok{ }\KeywordTok{solve}\NormalTok{(I)}
-\CommentTok{### Compute the power function:}
-\NormalTok{delta <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\OperatorTok{*}\NormalTok{(}\DecValTok{0}\OperatorTok{-}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
-\NormalTok{alpha <-}\StringTok{ }\FloatTok{0.05}
-\NormalTok{Power_B <-}\StringTok{ }\DecValTok{1}\OperatorTok{-}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{-}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{)) }\OperatorTok{+}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{+}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{))}
-\NormalTok{Power_B}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\DocumentationTok{\#\#\# Theoretical Power}
+\NormalTok{mod\_B }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yB}\SpecialCharTok{\textasciitilde{}}\NormalTok{E }\SpecialCharTok{+}\NormalTok{ G)}
+\DocumentationTok{\#\#\#\# Get the design matrix:}
+\NormalTok{X }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod\_B}\SpecialCharTok{$}\NormalTok{model[,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{])}
+\DocumentationTok{\#\#\# Compute the weight matrix W:}
+\NormalTok{beta }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(beta0,betaE,betaG)}
+\NormalTok{I }\OtherTok{\textless{}{-}}\NormalTok{ (}\DecValTok{1}\SpecialCharTok{/}\DecValTok{9}\NormalTok{)}\SpecialCharTok{*} \FunctionTok{as.matrix}\NormalTok{(}\FunctionTok{t}\NormalTok{(X)) }\SpecialCharTok{\%*\%} \FunctionTok{as.matrix}\NormalTok{(X)}
+\DocumentationTok{\#\#\#\# Invert to get the true covariance matrix }
+\NormalTok{V }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(I)}
+\DocumentationTok{\#\#\# Compute the power function:}
+\NormalTok{delta }\OtherTok{\textless{}{-}} \FunctionTok{sqrt}\NormalTok{(}\DecValTok{1}\SpecialCharTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\SpecialCharTok{*}\NormalTok{(}\DecValTok{0}\SpecialCharTok{{-}}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05}
+\NormalTok{Power\_B }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{{-}} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{{-}} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{)) }\SpecialCharTok{+} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{+} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{))}
+\NormalTok{Power\_B}
 \end{Highlighting}
 \end{Shaded}
 
@@ -381,19 +407,19 @@ simulations (K = 2000):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{12345}\NormalTok{,}\DataTypeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{p1 <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{2000}\NormalTok{) \{}
-\NormalTok{  yA <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N, }\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
-\NormalTok{  mod <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(yA}\OperatorTok{~}\NormalTok{E}\OperatorTok{+}\NormalTok{G)}
-\NormalTok{  p1[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod)}\OperatorTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{12345}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
+\NormalTok{  yA }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N, }\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
+\NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yA}\SpecialCharTok{\textasciitilde{}}\NormalTok{E}\SpecialCharTok{+}\NormalTok{G)}
+\NormalTok{  p1[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \NormalTok{\}}
-\NormalTok{emp_power <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(p1 }\OperatorTok{<=}\StringTok{ }\NormalTok{alpha)}
-\NormalTok{emp_power}
+\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p1 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
+\NormalTok{emp\_power}
 \end{Highlighting}
 \end{Shaded}
 
@@ -403,18 +429,18 @@ simulations (K = 2000):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.1}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{p2 <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{2000}\NormalTok{) \{}
-\NormalTok{  yB <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N, }\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
-\NormalTok{  mod <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(yB}\OperatorTok{~}\NormalTok{E}\OperatorTok{+}\NormalTok{G)}
-\NormalTok{  p2[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod)}\OperatorTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.1}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
+\NormalTok{  yB }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(N, }\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
+\NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(yB}\SpecialCharTok{\textasciitilde{}}\NormalTok{E}\SpecialCharTok{+}\NormalTok{G)}
+\NormalTok{  p2[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \NormalTok{\}}
-\NormalTok{emp_power <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(p2 }\OperatorTok{<=}\StringTok{ }\NormalTok{alpha)}
-\NormalTok{emp_power}
+\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p2 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
+\NormalTok{emp\_power}
 \end{Highlighting}
 \end{Shaded}
 
@@ -431,8 +457,8 @@ trait B), which is consistent to the result from theoretical powers.
 model:}\label{simulation-with-logistic-regression-model}}
 
 Assume the same setting as before, except now the two traits of interest
-are both binary instead of continuous. Assume their generating models
-are the followings:
+are both binary instead of continuous. Let their generating models be
+the followings:
 \[\textbf{A}:\text{logit}(\text{P}(Y=1|G,E)) = -0.5 + 0.3G + 0.8E,\]
 \[\textbf{B}: \text{logit}(\text{P}(Y=1|G,E)) = -0.5 + 0.3G + 0.1E.\]
 
@@ -440,45 +466,45 @@ All the regression parameters are the same as in the example of
 continuous traits. A key difference between the generating model of
 binary traits with the one of continuous traits is that there is no
 nuisance parameter \(\sigma\), which already implies that there might be
-a difference in their inferential results. All the studies are still
-carried out on the same set of individuals.
+a difference in the interpretation of their inferential results. Both
+studies are still carried out on the same set of individuals.
 
 In this example, we consider the sampling design to be prospective for
 simplicity. The intercept parameter is selected to make sure the
-prevalence of the trait is high enough. The explicit case-control ratio
-for each trait is displayed at below:
+case-control ratio is relatively balanced. The observed case-control
+ratio for each trait is displayed at below:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{### Simulated the common E and G}
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\DataTypeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\NormalTok{N <-}\StringTok{ }\DecValTok{1000}
-\NormalTok{G <-}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{),}\DataTypeTok{size =}\NormalTok{ N, }\DataTypeTok{replace =}\NormalTok{ T, }\DataTypeTok{prob =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.49}\NormalTok{,}\FloatTok{0.42}\NormalTok{,}\FloatTok{0.09}\NormalTok{))}
-\NormalTok{E <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(N,}\DataTypeTok{sd =} \DecValTok{3}\NormalTok{)}
+\DocumentationTok{\#\#\# Simulated the common E and G}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
+\NormalTok{N }\OtherTok{\textless{}{-}} \DecValTok{1000}
+\NormalTok{G }\OtherTok{\textless{}{-}} \FunctionTok{sample}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{),}\AttributeTok{size =}\NormalTok{ N, }\AttributeTok{replace =}\NormalTok{ T, }\AttributeTok{prob =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.49}\NormalTok{,}\FloatTok{0.42}\NormalTok{,}\FloatTok{0.09}\NormalTok{))}
+\NormalTok{E }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(N,}\AttributeTok{sd =} \DecValTok{3}\NormalTok{)}
 
 
-\CommentTok{### Simulate each trait's disease status based on E and G}
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{ylat_A <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
-\NormalTok{y_A <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_A }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+\DocumentationTok{\#\#\# Simulate each trait\textquotesingle{}s disease status based on E and G}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{ylat\_A }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
+\NormalTok{y\_A }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_A }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
 
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.1}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{ylat_B <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
-\NormalTok{y_B <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_B }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.1}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{ylat\_B }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
+\NormalTok{y\_B }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_B }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
 
 
 
-\CommentTok{### Case control counts across traits:}
-\NormalTok{t <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(}\KeywordTok{table}\NormalTok{(y_A),}\KeywordTok{table}\NormalTok{(y_B)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{as_tibble}\NormalTok{()}
-\KeywordTok{rownames}\NormalTok{(t) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\StringTok{"B"}\NormalTok{)}
-\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(t, }\DataTypeTok{caption =} \StringTok{"Case Control Counts across traits"}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{latex_options =} \StringTok{"HOLD_position"}\NormalTok{, }\DataTypeTok{font_size =} \DecValTok{10}\NormalTok{) }
+\DocumentationTok{\#\#\# Case control counts across traits:}
+\NormalTok{t }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(}\FunctionTok{table}\NormalTok{(y\_A),}\FunctionTok{table}\NormalTok{(y\_B)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{as\_tibble}\NormalTok{()}
+\FunctionTok{rownames}\NormalTok{(t) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\StringTok{"B"}\NormalTok{)}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(t, }\AttributeTok{caption =} \StringTok{"Case Control Counts across traits"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -500,12 +526,12 @@ B & 573 & 427\\
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{### Case control ratio across genotypes:}
-\NormalTok{t <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(}\KeywordTok{c}\NormalTok{(y_A,y_B),}\KeywordTok{c}\NormalTok{(G,G)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{as_tibble}\NormalTok{()}
-\KeywordTok{colnames}\NormalTok{(t) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Y"}\NormalTok{,}\StringTok{"G"}\NormalTok{)}
-\NormalTok{t <-}\StringTok{ }\NormalTok{t }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(G) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{ratio =} \KeywordTok{sum}\NormalTok{(Y)}\OperatorTok{/}\KeywordTok{n}\NormalTok{())}
-\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(t, }\DataTypeTok{caption =} \StringTok{"Case Control Ratio across genotypes"}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{latex_options =} \StringTok{"HOLD_position"}\NormalTok{, }\DataTypeTok{font_size =} \DecValTok{10}\NormalTok{) }
+\DocumentationTok{\#\#\# Case control ratio across genotypes:}
+\NormalTok{t }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{c}\NormalTok{(y\_A,y\_B),}\FunctionTok{c}\NormalTok{(G,G)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{as\_tibble}\NormalTok{()}
+\FunctionTok{colnames}\NormalTok{(t) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Y"}\NormalTok{,}\StringTok{"G"}\NormalTok{)}
+\NormalTok{t }\OtherTok{\textless{}{-}}\NormalTok{ t }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(G) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{summarise}\NormalTok{(}\AttributeTok{ratio =} \FunctionTok{sum}\NormalTok{(Y)}\SpecialCharTok{/}\FunctionTok{n}\NormalTok{())}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(t, }\AttributeTok{caption =} \StringTok{"Case Control Ratio across genotypes"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -532,10 +558,10 @@ casual SNP) for each trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## A:}
-\NormalTok{mod_A <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_A}\OperatorTok{~}\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(}\KeywordTok{summary}\NormalTok{(mod_A)}\OperatorTok{$}\NormalTok{coefficients, }\DataTypeTok{caption =} \StringTok{"Fitted Model for Trait A"}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{latex_options =} \StringTok{"HOLD_position"}\NormalTok{, }\DataTypeTok{font_size =} \DecValTok{10}\NormalTok{) }
+\DocumentationTok{\#\# A:}
+\NormalTok{mod\_A }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_A}\SpecialCharTok{\textasciitilde{}}\NormalTok{E }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\FunctionTok{summary}\NormalTok{(mod\_A)}\SpecialCharTok{$}\NormalTok{coefficients, }\AttributeTok{caption =} \StringTok{"Fitted Model for Trait A"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -559,10 +585,10 @@ G & 0.3242170 & 0.1334258 & 2.429942 & 0.0151012\\
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## B:}
-\NormalTok{mod_B <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_B}\OperatorTok{~}\StringTok{ }\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(}\KeywordTok{summary}\NormalTok{(mod_B)}\OperatorTok{$}\NormalTok{coefficients, }\DataTypeTok{caption =} \StringTok{"Fitted Model for Trait B"}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{latex_options =} \StringTok{"HOLD_position"}\NormalTok{, }\DataTypeTok{font_size =} \DecValTok{10}\NormalTok{) }
+\DocumentationTok{\#\# B:}
+\NormalTok{mod\_B }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_B}\SpecialCharTok{\textasciitilde{}}\NormalTok{ E }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\NormalTok{kableExtra}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\FunctionTok{summary}\NormalTok{(mod\_B)}\SpecialCharTok{$}\NormalTok{coefficients, }\AttributeTok{caption =} \StringTok{"Fitted Model for Trait B"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{, }\AttributeTok{font\_size =} \DecValTok{10}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -598,30 +624,30 @@ and the true parameters vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\CommentTok{### Theoretical Power}
-\NormalTok{mod_A <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_A}\OperatorTok{~}\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\CommentTok{#### Get the design matrix:}
-\NormalTok{X <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod_A}\OperatorTok{$}\NormalTok{model[,}\OperatorTok{-}\DecValTok{1}\NormalTok{])}
-\CommentTok{### Compute the weight matrix W:}
-\NormalTok{beta <-}\StringTok{ }\KeywordTok{c}\NormalTok{(beta0,betaE,betaG)}
-\CommentTok{#beta <- as.numeric(mod_A$coefficients)}
-\NormalTok{w <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N) \{}
-\NormalTok{  si <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{as.numeric}\NormalTok{(X[i,]) }\OperatorTok{%*%}\StringTok{ }\NormalTok{beta)}
-\NormalTok{  w[i] <-}\StringTok{ }\KeywordTok{dlogis}\NormalTok{(si)}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\DocumentationTok{\#\#\# Theoretical Power}
+\NormalTok{mod\_A }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_A}\SpecialCharTok{\textasciitilde{}}\NormalTok{E }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\DocumentationTok{\#\#\#\# Get the design matrix:}
+\NormalTok{X }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod\_A}\SpecialCharTok{$}\NormalTok{model[,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{])}
+\DocumentationTok{\#\#\# Compute the weight matrix W:}
+\NormalTok{beta }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(beta0,betaE,betaG)}
+\CommentTok{\#beta \textless{}{-} as.numeric(mod\_A$coefficients)}
+\NormalTok{w }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{N) \{}
+\NormalTok{  si }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{as.numeric}\NormalTok{(X[i,]) }\SpecialCharTok{\%*\%}\NormalTok{ beta)}
+\NormalTok{  w[i] }\OtherTok{\textless{}{-}} \FunctionTok{dlogis}\NormalTok{(si)}
 \NormalTok{\}}
-\NormalTok{I <-}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(}\KeywordTok{t}\NormalTok{(X)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{diag}\NormalTok{(w,}\DataTypeTok{nrow =}\NormalTok{ N,}\DataTypeTok{ncol =}\NormalTok{ N) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(X)}
-\CommentTok{#### Invert to get the true covariance matrix }
-\NormalTok{V <-}\StringTok{ }\KeywordTok{solve}\NormalTok{(I)}
-\CommentTok{### Compute the power function:}
-\NormalTok{delta <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\OperatorTok{*}\NormalTok{(}\DecValTok{0}\OperatorTok{-}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
-\NormalTok{alpha <-}\StringTok{ }\FloatTok{0.05}
-\NormalTok{Power_A <-}\StringTok{ }\DecValTok{1}\OperatorTok{-}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{-}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{)) }\OperatorTok{+}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{+}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{))}
-\NormalTok{Power_A}
+\NormalTok{I }\OtherTok{\textless{}{-}} \FunctionTok{as.matrix}\NormalTok{(}\FunctionTok{t}\NormalTok{(X)) }\SpecialCharTok{\%*\%} \FunctionTok{diag}\NormalTok{(w,}\AttributeTok{nrow =}\NormalTok{ N,}\AttributeTok{ncol =}\NormalTok{ N) }\SpecialCharTok{\%*\%} \FunctionTok{as.matrix}\NormalTok{(X)}
+\DocumentationTok{\#\#\#\# Invert to get the true covariance matrix }
+\NormalTok{V }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(I)}
+\DocumentationTok{\#\#\# Compute the power function:}
+\NormalTok{delta }\OtherTok{\textless{}{-}} \FunctionTok{sqrt}\NormalTok{(}\DecValTok{1}\SpecialCharTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\SpecialCharTok{*}\NormalTok{(}\DecValTok{0}\SpecialCharTok{{-}}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05}
+\NormalTok{Power\_A }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{{-}} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{{-}} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{)) }\SpecialCharTok{+} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{+} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{))}
+\NormalTok{Power\_A}
 \end{Highlighting}
 \end{Shaded}
 
@@ -631,30 +657,30 @@ and the true parameters vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.1}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\CommentTok{### Theoretical Power}
-\NormalTok{mod_B <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_B}\OperatorTok{~}\StringTok{ }\NormalTok{E }\OperatorTok{+}\StringTok{ }\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\CommentTok{#### Get the design matrix:}
-\NormalTok{X <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod_B}\OperatorTok{$}\NormalTok{model[,}\OperatorTok{-}\DecValTok{1}\NormalTok{])}
-\CommentTok{### Compute the weight matrix W:}
-\NormalTok{beta <-}\StringTok{ }\KeywordTok{c}\NormalTok{(beta0,betaE,betaG)}
-\CommentTok{#beta <- as.numeric(mod_B$coefficients)}
-\NormalTok{w <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N) \{}
-\NormalTok{  si <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{as.numeric}\NormalTok{(X[i,]) }\OperatorTok{%*%}\StringTok{ }\NormalTok{beta)}
-\NormalTok{  w[i] <-}\StringTok{ }\KeywordTok{dlogis}\NormalTok{(si)}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.1}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\DocumentationTok{\#\#\# Theoretical Power}
+\NormalTok{mod\_B }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_B}\SpecialCharTok{\textasciitilde{}}\NormalTok{ E }\SpecialCharTok{+}\NormalTok{ G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\DocumentationTok{\#\#\#\# Get the design matrix:}
+\NormalTok{X }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{,N),mod\_B}\SpecialCharTok{$}\NormalTok{model[,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{])}
+\DocumentationTok{\#\#\# Compute the weight matrix W:}
+\NormalTok{beta }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(beta0,betaE,betaG)}
+\CommentTok{\#beta \textless{}{-} as.numeric(mod\_B$coefficients)}
+\NormalTok{w }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{N) \{}
+\NormalTok{  si }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{as.numeric}\NormalTok{(X[i,]) }\SpecialCharTok{\%*\%}\NormalTok{ beta)}
+\NormalTok{  w[i] }\OtherTok{\textless{}{-}} \FunctionTok{dlogis}\NormalTok{(si)}
 \NormalTok{\}}
-\NormalTok{I <-}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(}\KeywordTok{t}\NormalTok{(X)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{diag}\NormalTok{(w,}\DataTypeTok{nrow =}\NormalTok{ N,}\DataTypeTok{ncol =}\NormalTok{ N) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{as.matrix}\NormalTok{(X)}
-\CommentTok{#### Invert to get the true covariance matrix }
-\NormalTok{V <-}\StringTok{ }\KeywordTok{solve}\NormalTok{(I)}
-\CommentTok{### Compute the power function:}
-\NormalTok{delta <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\OperatorTok{*}\NormalTok{(}\DecValTok{0}\OperatorTok{-}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
-\NormalTok{alpha <-}\StringTok{ }\FloatTok{0.05}
-\NormalTok{Power_B <-}\StringTok{ }\DecValTok{1}\OperatorTok{-}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{-}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{)) }\OperatorTok{+}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(delta }\OperatorTok{+}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(alpha}\OperatorTok{/}\DecValTok{2}\NormalTok{))}
-\NormalTok{Power_B}
+\NormalTok{I }\OtherTok{\textless{}{-}} \FunctionTok{as.matrix}\NormalTok{(}\FunctionTok{t}\NormalTok{(X)) }\SpecialCharTok{\%*\%} \FunctionTok{diag}\NormalTok{(w,}\AttributeTok{nrow =}\NormalTok{ N,}\AttributeTok{ncol =}\NormalTok{ N) }\SpecialCharTok{\%*\%} \FunctionTok{as.matrix}\NormalTok{(X)}
+\DocumentationTok{\#\#\#\# Invert to get the true covariance matrix }
+\NormalTok{V }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(I)}
+\DocumentationTok{\#\#\# Compute the power function:}
+\NormalTok{delta }\OtherTok{\textless{}{-}} \FunctionTok{sqrt}\NormalTok{(}\DecValTok{1}\SpecialCharTok{/}\NormalTok{V[}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{])}\SpecialCharTok{*}\NormalTok{(}\DecValTok{0}\SpecialCharTok{{-}}\NormalTok{beta[}\DecValTok{3}\NormalTok{])}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05}
+\NormalTok{Power\_B }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{{-}} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{{-}} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{)) }\SpecialCharTok{+} \FunctionTok{pnorm}\NormalTok{(delta }\SpecialCharTok{+} \FunctionTok{qnorm}\NormalTok{(alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{))}
+\NormalTok{Power\_B}
 \end{Highlighting}
 \end{Shaded}
 
@@ -667,9 +693,10 @@ of Wald test will be \(0.619\) for the trait A, and \(0.861\) for the
 trait B. Note that Wald test on trait B has quite larger power compared
 to on trait A, despite the fact that the two samples are generated with
 same \(\beta_G = 0.3\) and generated by the same set of
-\(\{G_i,E_i\}_n\). This suggests the p-values of Wald test may have very
-different distributions on the two traits. We can double check that our
-theoretical powers for both tests are correct using empirical powers:
+\(\{G_i,E_i\}_{i=1}^n\). This suggests the p-values of Wald test may
+have very different distributions on the two traits. We can double check
+that our theoretical powers for both tests are correct using empirical
+powers:
 
 To compute the empirical powers, we re-simulated each type of binary
 trait for \(K = 2000\) times, and compute the \(2000\) p-values in each
@@ -677,20 +704,20 @@ trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\DataTypeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
-\CommentTok{## A:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.8}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{p1 <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{2000}\NormalTok{) \{}
-\NormalTok{  ylat_A <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
-\NormalTok{  y_A_rep <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_A }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{  mod <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_A_rep}\OperatorTok{~}\NormalTok{E}\OperatorTok{+}\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\NormalTok{  p1[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod)}\OperatorTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{100}\NormalTok{,}\AttributeTok{sample.kind =} \StringTok{"Rounding"}\NormalTok{)}
+\DocumentationTok{\#\# A:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.8}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
+\NormalTok{  ylat\_A }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
+\NormalTok{  y\_A\_rep }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_A }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+\NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_A\_rep}\SpecialCharTok{\textasciitilde{}}\NormalTok{E}\SpecialCharTok{+}\NormalTok{G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\NormalTok{  p1[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \NormalTok{\}}
-\NormalTok{emp_power <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(p1 }\OperatorTok{<=}\StringTok{ }\NormalTok{alpha)}
-\NormalTok{emp_power}
+\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p1 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
+\NormalTok{emp\_power}
 \end{Highlighting}
 \end{Shaded}
 
@@ -700,19 +727,19 @@ trait:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{## B:}
-\NormalTok{beta0 <-}\StringTok{ }\FloatTok{-0.5}
-\NormalTok{betaE <-}\StringTok{ }\FloatTok{0.1}
-\NormalTok{betaG <-}\StringTok{ }\FloatTok{0.3}
-\NormalTok{p2 <-}\StringTok{ }\KeywordTok{c}\NormalTok{()}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{2000}\NormalTok{) \{}
-\NormalTok{  ylat_B <-}\StringTok{ }\NormalTok{beta0 }\OperatorTok{+}\StringTok{ }\NormalTok{betaG}\OperatorTok{*}\NormalTok{G }\OperatorTok{+}\StringTok{ }\NormalTok{betaE}\OperatorTok{*}\NormalTok{E }\OperatorTok{+}\StringTok{ }\KeywordTok{rlogis}\NormalTok{(N)}
-\NormalTok{  y_B_rep <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(ylat_B }\OperatorTok{>=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
-\NormalTok{  mod <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(y_B_rep}\OperatorTok{~}\NormalTok{E}\OperatorTok{+}\NormalTok{G, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
-\NormalTok{  p2[i] <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(mod)}\OperatorTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\DocumentationTok{\#\# B:}
+\NormalTok{beta0 }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\FloatTok{0.5}
+\NormalTok{betaE }\OtherTok{\textless{}{-}} \FloatTok{0.1}
+\NormalTok{betaG }\OtherTok{\textless{}{-}} \FloatTok{0.3}
+\NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2000}\NormalTok{) \{}
+\NormalTok{  ylat\_B }\OtherTok{\textless{}{-}}\NormalTok{ beta0 }\SpecialCharTok{+}\NormalTok{ betaG}\SpecialCharTok{*}\NormalTok{G }\SpecialCharTok{+}\NormalTok{ betaE}\SpecialCharTok{*}\NormalTok{E }\SpecialCharTok{+} \FunctionTok{rlogis}\NormalTok{(N)}
+\NormalTok{  y\_B\_rep }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ylat\_B }\SpecialCharTok{\textgreater{}=}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+\NormalTok{  mod }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(y\_B\_rep}\SpecialCharTok{\textasciitilde{}}\NormalTok{E}\SpecialCharTok{+}\NormalTok{G, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\NormalTok{  p2[i] }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(mod)}\SpecialCharTok{$}\NormalTok{coefficient[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \NormalTok{\}}
-\NormalTok{emp_power <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(p2 }\OperatorTok{<=}\StringTok{ }\NormalTok{alpha)}
-\NormalTok{emp_power}
+\NormalTok{emp\_power }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(p2 }\SpecialCharTok{\textless{}=}\NormalTok{ alpha)}
+\NormalTok{emp\_power}
 \end{Highlighting}
 \end{Shaded}
 
@@ -728,17 +755,20 @@ visualized as well:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{### Comparison:}
-\NormalTok{pcomp <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{P =} \KeywordTok{c}\NormalTok{(p1,p2), }\DataTypeTok{trait =} \KeywordTok{c}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\DecValTok{2000}\NormalTok{),}\KeywordTok{rep}\NormalTok{(}\StringTok{"B"}\NormalTok{,}\DecValTok{2000}\NormalTok{)))}
-\NormalTok{pcomp }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ P, }\DataTypeTok{fill =}\NormalTok{ trait)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{20}\NormalTok{, }\DataTypeTok{alpha=}\FloatTok{0.5}\NormalTok{, }\DataTypeTok{position=}\StringTok{"identity"}\NormalTok{)}
+\DocumentationTok{\#\#\# Comparison:}
+\NormalTok{pcomp }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{P =} \FunctionTok{c}\NormalTok{(p1,p2), }\AttributeTok{trait =} \FunctionTok{c}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\StringTok{"A"}\NormalTok{,}\DecValTok{2000}\NormalTok{),}\FunctionTok{rep}\NormalTok{(}\StringTok{"B"}\NormalTok{,}\DecValTok{2000}\NormalTok{)))}
+\NormalTok{pcomp }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ P, }\AttributeTok{fill =}\NormalTok{ trait)) }\SpecialCharTok{+} \FunctionTok{geom\_histogram}\NormalTok{(}\AttributeTok{bins =} \DecValTok{20}\NormalTok{, }\AttributeTok{alpha=}\FloatTok{0.5}\NormalTok{, }\AttributeTok{position=}\StringTok{"identity"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{GWAS-Pvalues_files/figure-latex/visualization-1.png}
 
-Based on the figure above, we can conclude that the distribution of p
-values in trait B is stochastically smaller than the distribution in
-trait A, even if their underlying \(\beta_G\) are both \(0.3\).
+Based on the figure above, we can conclude that the distribution of
+p-values in trait B is stochastically smaller than the distribution in
+trait A, even if their underlying \(\beta_G\) are both \(0.3\). This is
+within our expectation because we know that the \textbf{relative} effect
+size (\(\frac{|\beta_G|}{|\beta_E|}\)) is larger for trait B.
+
 Therefore, it shows that the magnitudes of p-values of different studies
 are not directly comparable, unless the generalized linear regression
 model being used is the ordinary linear regression model with \(g\)
@@ -756,21 +786,25 @@ being identity function.
 \noindent
 
 \hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
 \leavevmode\hypertarget{ref-meta1}{}%
 Begum, Ferdouse, Debashis Ghosh, George C. Tseng, and Eleanor Feingold.
-2012. ``Comprehensive literature review and statistical considerations
-for GWAS meta-analysis.'' \emph{Nucleic Acids Research} 40 (9):
+2012. {``{Comprehensive literature review and statistical considerations
+for GWAS meta-analysis}.''} \emph{Nucleic Acids Research} 40 (9):
 3777--84.
 
 \leavevmode\hypertarget{ref-meta2}{}%
-Evangelou, Evangelos, and John Ioannidis. 2013. ``Evangelou E, Ioannidis
-Jp.meta-Analysis Methods for Genome-Wide Association Studies and Beyond.
-Nat Rev Genet 14:379-389.'' \emph{Nature Reviews. Genetics} 14 (May).
+Evangelou, Evangelos, and John Ioannidis. 2013. {``Evangelou e,
+Ioannidis JP.meta-Analysis Methods for Genome-Wide Association Studies
+and Beyond. Nat Rev Genet 14:379-389.''} \emph{Nature Reviews. Genetics}
+14 (May).
 
 \leavevmode\hypertarget{ref-MTAG}{}%
 Turley, Patrick, Raymond K Walters, Omeed Maghzian, Aysu Okbay, James J
-Lee, Mark Alan Fontana, Tuan Anh Nguyen-Viet, et al. 2018. ``Multi-Trait
-Analysis of Genome-Wide Association Summary Statistics Using Mtag.''
-\emph{Nature Genetics} 50 (2): 229--37.
+Lee, Mark Alan Fontana, Tuan Anh Nguyen-Viet, et al. 2018.
+{``Multi-Trait Analysis of Genome-Wide Association Summary Statistics
+Using MTAG.''} \emph{Nature Genetics} 50 (2): 229--37.
+
+\end{CSLReferences}
 
 \end{document}
