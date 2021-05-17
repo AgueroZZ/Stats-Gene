@@ -56,7 +56,7 @@ For the analysis of continuous trait, a natural option would be using ordinary G
 $$Y = \beta_0 + \beta_G G + \beta_E E+\epsilon,$$
 where $\epsilon \sim N(0,\sigma)$.
 
-In this case, suppose the question of interest is testing $\beta_G=0$, the Wald test will have non-centrality parameter being $$\frac{\beta_G^2}{\sigma^2[X^TX]^{-1}_{[33]}}.$$
+In this case, suppose the question of interest is testing $\beta_G=0$, the Wald test will have non-centrality parameter being $$\frac{\beta_G^2}{\sigma^2[X^TX]^{-1}_{[2,2]}}.$$
 
 Because the (inverse) information matrix $\sigma^2[X^TX]^{-1}$ only depends on the nuisance parameter $\sigma$, power of this test will not change as $\beta_0$ or $\beta_E$ change, as long as the nuisance parameter is the same. This implies, if a SNP $G$ has true effect $\beta_G$ being constant across two traits and assume $\sigma$ being the same, then the power of testing $\beta_G = 0$ will be constant across two traits as well. Therefore, the aggregation of evidences across traits will be straightforward and smaller p-value can be associated with larger SNP effect.
 
@@ -95,50 +95,53 @@ E <- rnorm(N,sd = 3)
 ### Simulate each trait's disease status based on E and G
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
+
 yA <- beta0 + betaG*G + betaE*E + rnorm(N,sd = 3)
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.1
 betaG <- 0.3
+betaE <- 0.1
+
 yB <- beta0 + betaG*G + betaE*E + rnorm(N, sd = 3)
 
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
 ### Theoretical Power
-mod_A <- lm(yA~E + G)
+mod_A <- lm(yA~G + E)
 #### Get the design matrix:
 X <- cbind(rep(1,N),mod_A$model[,-1])
 ### Compute the weight matrix W:
-beta <- c(beta0,betaE,betaG)
+beta <- c(beta0,betaG,betaE)
 I <- (1/9)* as.matrix(t(X)) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 
 V <- solve(I)
 ### Compute the power function:
-delta <- sqrt(1/V[3,3])*(0-beta[3])
+delta <- sqrt(1/V[2,2])*(0-beta[2])
 alpha <- 0.05
 Power_A <- 1- pnorm(delta - qnorm(alpha/2)) + pnorm(delta + qnorm(alpha/2))
 Power_A
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.1
+
 ### Theoretical Power
-mod_B <- lm(yB~E + G)
+mod_B <- lm(yB~G + E)
 #### Get the design matrix:
 X <- cbind(rep(1,N),mod_B$model[,-1])
 ### Compute the weight matrix W:
-beta <- c(beta0,betaE,betaG)
+beta <- c(beta0,betaG,betaE)
 I <- (1/9)* as.matrix(t(X)) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 
 V <- solve(I)
 ### Compute the power function:
-delta <- sqrt(1/V[3,3])*(0-beta[3])
+delta <- sqrt(1/V[2,2])*(0-beta[2])
 alpha <- 0.05
 Power_B <- 1- pnorm(delta - qnorm(alpha/2)) + pnorm(delta + qnorm(alpha/2))
 Power_B
@@ -149,8 +152,8 @@ Based on the formula from previous section, we can compute the power to be 0.549
 set.seed(12345,sample.kind = "Rounding")
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
 p1 <- c()
 for (i in 1:2000) {
   yA <- beta0 + betaG*G + betaE*E + rnorm(N, sd = 3)
@@ -163,8 +166,8 @@ emp_power
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.1
 betaG <- 0.3
+betaE <- 0.1
 p2 <- c()
 for (i in 1:2000) {
   yB <- beta0 + betaG*G + betaE*E + rnorm(N, sd = 3)
@@ -202,15 +205,15 @@ E <- rnorm(N,sd = 3)
 ### Simulate each trait's disease status based on E and G
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
 ylat_A <- beta0 + betaG*G + betaE*E + rlogis(N)
 y_A <- ifelse(ylat_A >=0, 1, 0)
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.1
 betaG <- 0.3
+betaE <- 0.1
 ylat_B <- beta0 + betaG*G + betaE*E + rlogis(N)
 y_B <- ifelse(ylat_B >=0, 1, 0)
 
@@ -235,11 +238,11 @@ kableExtra::kable(t, caption = "Case Control Ratio across genotypes") %>%
 We can use Wald test to test the hypothesis $\beta_G = 0$ (i.e. G is a casual SNP) for each trait:
 ```{r}
 ## A:
-mod_A <- glm(y_A~E + G, family = binomial(link = "logit"))
+mod_A <- glm(y_A~G + E, family = binomial(link = "logit"))
 kableExtra::kable(summary(mod_A)$coefficients, caption = "Fitted Model for Trait A") %>%
   kable_styling(latex_options = "HOLD_position", font_size = 10) 
 ## B:
-mod_B <- glm(y_B~ E + G, family = binomial(link = "logit"))
+mod_B <- glm(y_B~ G + E, family = binomial(link = "logit"))
 kableExtra::kable(summary(mod_B)$coefficients, caption = "Fitted Model for Trait B") %>%
   kable_styling(latex_options = "HOLD_position", font_size = 10) 
 ```
@@ -250,14 +253,14 @@ Again, assume that the hypothesis $\beta_G = 0$ will be tested using Wald test w
 ```{r Theoretical Powers}
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
 ### Theoretical Power
-mod_A <- glm(y_A~E + G, family = binomial(link = "logit"))
+mod_A <- glm(y_A~G + E, family = binomial(link = "logit"))
 #### Get the design matrix:
 X <- cbind(rep(1,N),mod_A$model[,-1])
 ### Compute the weight matrix W:
-beta <- c(beta0,betaE,betaG)
+beta <- c(beta0,betaG,betaE)
 #beta <- as.numeric(mod_A$coefficients)
 w <- c()
 for (i in 1:N) {
@@ -268,7 +271,7 @@ I <- as.matrix(t(X)) %*% diag(w,nrow = N,ncol = N) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 
 V <- solve(I)
 ### Compute the power function:
-delta <- sqrt(1/V[3,3])*(0-beta[3])
+delta <- sqrt(1/V[2,2])*(0-beta[2])
 alpha <- 0.05
 Power_A <- 1- pnorm(delta - qnorm(alpha/2)) + pnorm(delta + qnorm(alpha/2))
 Power_A
@@ -276,14 +279,14 @@ Power_A
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.1
 betaG <- 0.3
+betaE <- 0.1
 ### Theoretical Power
-mod_B <- glm(y_B~ E + G, family = binomial(link = "logit"))
+mod_B <- glm(y_B~ G + E, family = binomial(link = "logit"))
 #### Get the design matrix:
 X <- cbind(rep(1,N),mod_B$model[,-1])
 ### Compute the weight matrix W:
-beta <- c(beta0,betaE,betaG)
+beta <- c(beta0,betaG,betaE)
 #beta <- as.numeric(mod_B$coefficients)
 w <- c()
 for (i in 1:N) {
@@ -294,7 +297,7 @@ I <- as.matrix(t(X)) %*% diag(w,nrow = N,ncol = N) %*% as.matrix(X)
 #### Invert to get the true covariance matrix 
 V <- solve(I)
 ### Compute the power function:
-delta <- sqrt(1/V[3,3])*(0-beta[3])
+delta <- sqrt(1/V[2,2])*(0-beta[2])
 alpha <- 0.05
 Power_B <- 1- pnorm(delta - qnorm(alpha/2)) + pnorm(delta + qnorm(alpha/2))
 Power_B
@@ -307,8 +310,8 @@ To compute the empirical powers, we re-simulated each type of binary trait for $
 set.seed(100,sample.kind = "Rounding")
 ## A:
 beta0 <- -0.5
-betaE <- 0.8
 betaG <- 0.3
+betaE <- 0.8
 p1 <- c()
 for (i in 1:2000) {
   ylat_A <- beta0 + betaG*G + betaE*E + rlogis(N)
@@ -321,8 +324,8 @@ emp_power
 
 ## B:
 beta0 <- -0.5
-betaE <- 0.1
 betaG <- 0.3
+betaE <- 0.1
 p2 <- c()
 for (i in 1:2000) {
   ylat_B <- beta0 + betaG*G + betaE*E + rlogis(N)
